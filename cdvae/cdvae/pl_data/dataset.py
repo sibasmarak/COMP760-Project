@@ -13,7 +13,7 @@ from cdvae.common.data_utils import (
 
 
 class CrystDataset(Dataset):
-    def __init__(self, name: ValueNode, path: ValueNode,
+    def __init__(self, name: ValueNode, path: ValueNode, onet_path: ValueNode,
                  prop: ValueNode, niggli: ValueNode, primitive: ValueNode,
                  graph_method: ValueNode, preprocess_workers: ValueNode,
                  lattice_scale_method: ValueNode,
@@ -27,6 +27,7 @@ class CrystDataset(Dataset):
         self.primitive = primitive
         self.graph_method = graph_method
         self.lattice_scale_method = lattice_scale_method
+        self.onet_data = torch.load(onet_path)
 
         self.cached_data = preprocess(
             self.path,
@@ -34,7 +35,8 @@ class CrystDataset(Dataset):
             niggli=self.niggli,
             primitive=self.primitive,
             graph_method=self.graph_method,
-            prop_list=[prop])
+            prop_list=[prop],
+            onet_data=self.onet_data)
 
         add_scaled_lattice_prop(self.cached_data, lattice_scale_method)
         self.lattice_scaler = None
@@ -65,6 +67,7 @@ class CrystDataset(Dataset):
             num_atoms=num_atoms,
             num_bonds=edge_indices.shape[0],
             num_nodes=num_atoms,  # special attribute used for batching in pytorch geometric
+            onet_rep=torch.Tensor(data_dict['onet_rep']),
             y=prop.view(1, -1),
         )
         return data

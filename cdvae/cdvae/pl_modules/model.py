@@ -1,5 +1,5 @@
-from typing import Any, Dict
-
+from typing import Any, Dict, List
+import time
 import hydra
 import numpy as np
 import omegaconf
@@ -41,6 +41,7 @@ class BaseModule(pl.LightningModule):
         scheduler = hydra.utils.instantiate(
             self.hparams.optim.lr_scheduler, optimizer=opt
         )
+
         return {"optimizer": opt, "lr_scheduler": scheduler, "monitor": "val_loss"}
 
 
@@ -363,6 +364,8 @@ class CDVAE(BaseModule):
 
         kld_loss = self.kld_loss(mu, log_var)
 
+        kd_loss = self.kd_loss(z, batch.onet_rep)
+
         if self.hparams.predict_property:
             property_loss = self.property_loss(z, batch)
         else:
@@ -375,6 +378,7 @@ class CDVAE(BaseModule):
             'coord_loss': coord_loss,
             'type_loss': type_loss,
             'kld_loss': kld_loss,
+            'kd_loss': kd_loss,
             'property_loss': property_loss,
             'pred_num_atoms': pred_num_atoms,
             'pred_lengths_and_angles': pred_lengths_and_angles,
@@ -467,6 +471,10 @@ class CDVAE(BaseModule):
     def num_atom_loss(self, pred_num_atoms, batch):
         return F.cross_entropy(pred_num_atoms, batch.num_atoms)
 
+    def kd_loss(self, z, onet_rep):
+        # knowledge distillation loss
+        return F.mse_loss(z, onet_rep)
+
     def property_loss(self, z, batch):
         return F.mse_loss(self.fc_property(z), batch.y)
 
@@ -538,13 +546,19 @@ class CDVAE(BaseModule):
     def validation_step(self, batch: Any, batch_idx: int) -> torch.Tensor:
         outputs = self(batch, teacher_forcing=False, training=False)
         log_dict, loss = self.compute_stats(batch, outputs, prefix='val')
+        
         self.log_dict(
             log_dict,
             on_step=False,
             on_epoch=True,
             prog_bar=True,
         )
+
         return loss
+
+    # def validation_epoch_end(self, outputs: List[Any]) -> None:
+    #     print('----- Returning from validation_end() -----')
+    #     return
 
     def test_step(self, batch: Any, batch_idx: int) -> torch.Tensor:
         outputs = self(batch, teacher_forcing=False, training=False)
@@ -560,6 +574,7 @@ class CDVAE(BaseModule):
         coord_loss = outputs['coord_loss']
         type_loss = outputs['type_loss']
         kld_loss = outputs['kld_loss']
+        kd_loss = outputs['kd_loss']
         composition_loss = outputs['composition_loss']
         property_loss = outputs['property_loss']
 
@@ -570,7 +585,8 @@ class CDVAE(BaseModule):
             self.hparams.cost_type * type_loss +
             self.hparams.beta * kld_loss +
             self.hparams.cost_composition * composition_loss +
-            self.hparams.cost_property * property_loss)
+            self.hparams.cost_property * property_loss +
+            self.hparams.cost_kd * kd_loss)
 
         log_dict = {
             f'{prefix}_loss': loss,
@@ -580,6 +596,7 @@ class CDVAE(BaseModule):
             f'{prefix}_type_loss': type_loss,
             f'{prefix}_kld_loss': kld_loss,
             f'{prefix}_composition_loss': composition_loss,
+            f'{prefix}_kd_loss': kd_loss,
         }
 
         if prefix != 'train':
@@ -628,7 +645,7 @@ class CDVAE(BaseModule):
                 f'{prefix}_volumes_mard': volumes_mard,
                 f'{prefix}_type_accuracy': type_accuracy,
             })
-
+            
         return log_dict, loss
 
 

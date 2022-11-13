@@ -1,4 +1,4 @@
-name: cdvae
+name: COMP760
 channels:
   - pyg
   - defaults

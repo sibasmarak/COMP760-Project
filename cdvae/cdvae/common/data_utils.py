@@ -651,7 +651,7 @@ def preprocess(input_file, num_workers, niggli, primitive, graph_method,
                prop_list):
     df = pd.read_csv(input_file)
 
-    def process_one(row, niggli, primitive, graph_method, prop_list):
+    def process_one(row, niggli, primitive, graph_method, prop_list, onet_data):
         crystal_str = row['cif']
         crystal = build_crystal(
             crystal_str, niggli=niggli, primitive=primitive)
@@ -660,6 +660,7 @@ def preprocess(input_file, num_workers, niggli, primitive, graph_method,
         result_dict = {
             'mp_id': row['material_id'],
             'cif': crystal_str,
+            'onet_rep': onet_data[row['material_id']],
             'graph_arrays': graph_arrays,
         }
         result_dict.update(properties)

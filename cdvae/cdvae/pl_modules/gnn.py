@@ -7,11 +7,13 @@ from torch_scatter import scatter
 from torch_geometric.nn.acts import swish
 from torch_geometric.nn.inits import glorot_orthogonal
 from torch_geometric.nn.models.dimenet import (
-    BesselBasisLayer,
     EmbeddingBlock,
     ResidualLayer,
     SphericalBasisLayer,
+    Envelope
+#    BesselBasisLayer,  #Not using inbuilt class
 )
+from math import sqrt, pi as PI
 from torch_sparse import SparseTensor
 
 from cdvae.common.data_utils import (
@@ -26,6 +28,23 @@ try:
 except ImportError:
     sym = None
 
+###### Rewrote BesselBasisLayer
+class BesselBasisLayer(torch.nn.Module):
+    def __init__(self, num_radial, cutoff=5.0, envelope_exponent=5):
+        super(BesselBasisLayer, self).__init__()
+        self.cutoff = cutoff
+        self.envelope = Envelope(envelope_exponent)
+
+        self.freq = torch.nn.Parameter(torch.Tensor(num_radial))
+
+        self.reset_parameters()
+
+    def reset_parameters(self):
+#        torch.arange(1, self.freq.numel() + 1, out=self.freq).mul_(PI)
+        self.freq = torch.nn.parameter.Parameter(torch.arange(1, self.freq.numel() + 1, dtype = torch.float32), requires_grad = False).mul_(PI)
+    def forward(self, dist):
+        dist = dist.unsqueeze(-1) / self.cutoff
+        return self.envelope(dist) * (self.freq * dist).sin()
 
 class InteractionPPBlock(torch.nn.Module):
     def __init__(
@@ -296,7 +315,6 @@ class DimeNetPlusPlus(torch.nn.Module):
         """"""
         raise NotImplementedError
 
-
 class DimeNetPlusPlusWrap(DimeNetPlusPlus):
     def __init__(
         self,
@@ -426,7 +444,6 @@ class DimeNetPlusPlusWrap(DimeNetPlusPlus):
     def num_params(self):
         return sum(p.numel() for p in self.parameters())
 
-
 class GemNetTEncoder(nn.Module):
     """Wrapper for GemNetT."""
 
@@ -471,3 +488,4 @@ class GemNetTEncoder(nn.Module):
             num_bonds=data.num_bonds
         )
         return output
+

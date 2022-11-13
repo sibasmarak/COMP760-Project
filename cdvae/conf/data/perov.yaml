@@ -1,4 +1,5 @@
 root_path: ${oc.env:PROJECT_ROOT}/data/perov_5
+root_onet_path: ${oc.env:PROJECT_ROOT}/data/perov_5_onet
 prop: heat_ref
 num_targets: 1
 # prop: scaled_lattice
@@ -27,6 +28,7 @@ datamodule:
       _target_: cdvae.pl_data.dataset.CrystDataset
       name: Formation energy train
       path: ${data.root_path}/train.csv
+      onet_path: ${data.root_onet_path}/train.pt
       prop: ${data.prop}
       niggli: ${data.niggli}
       primitive: ${data.primitive}
@@ -38,6 +40,7 @@ datamodule:
       - _target_: cdvae.pl_data.dataset.CrystDataset
         name: Formation energy val
         path: ${data.root_path}/val.csv
+        onet_path: ${data.root_onet_path}/val.pt
         prop: ${data.prop}
         niggli: ${data.niggli}
         primitive: ${data.primitive}
@@ -49,6 +52,7 @@ datamodule:
       - _target_: cdvae.pl_data.dataset.CrystDataset
         name: Formation energy test
         path: ${data.root_path}/test.csv
+        onet_path: ${data.root_onet_path}/test.pt
         prop: ${data.prop}
         niggli: ${data.niggli}
         primitive: ${data.primitive}

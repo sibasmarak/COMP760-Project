@@ -216,3 +216,9 @@ fabric.properties
 
 # .DS_Store
 .DS_Store
+
+
+*.zip
+*.tar.gz
+hydra/
+learn_materials-equivariant_model/
