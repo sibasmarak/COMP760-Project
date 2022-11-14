@@ -364,7 +364,8 @@ class CDVAE(BaseModule):
 
         kld_loss = self.kld_loss(mu, log_var)
 
-        kd_loss = self.kd_loss(z, batch.onet_rep)
+        kd_targets = batch.onet_rep.reshape(z.shape[0], z.shape[1])
+        kd_loss = self.kd_loss(z, kd_targets)
 
         if self.hparams.predict_property:
             property_loss = self.property_loss(z, batch)
@@ -473,6 +474,12 @@ class CDVAE(BaseModule):
 
     def kd_loss(self, z, onet_rep):
         # knowledge distillation loss
+
+        # normalize z and onet_rep
+        z = F.normalize(z, dim=-1)
+        onet_rep = F.normalize(onet_rep, dim=-1)
+
+        # return z * onet_rep
         return F.mse_loss(z, onet_rep)
 
     def property_loss(self, z, batch):

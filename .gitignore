@@ -222,3 +222,4 @@ fabric.properties
 *.tar.gz
 hydra/
 learn_materials-equivariant_model/
+*.pt

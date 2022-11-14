@@ -9,6 +9,7 @@ cost_type: 1.
 cost_lattice: 10.
 cost_composition: 1.
 cost_edge: 10.
+cost_kd: 1.
 cost_property: 1.
 beta: 0.01
 teacher_forcing_lattice: true
