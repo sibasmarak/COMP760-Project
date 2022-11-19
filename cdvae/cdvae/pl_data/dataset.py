@@ -2,6 +2,7 @@ import hydra
 import omegaconf
 import torch
 import pandas as pd
+import pickle
 from omegaconf import ValueNode
 from torch.utils.data import Dataset
 
@@ -27,7 +28,12 @@ class CrystDataset(Dataset):
         self.primitive = primitive
         self.graph_method = graph_method
         self.lattice_scale_method = lattice_scale_method
-        self.onet_data = torch.load(onet_path)
+        self.onet_data = pickle.load(open(onet_path, 'rb'))
+
+        # transfer to cpu to avoid memory leak
+        for k, v in self.onet_data.items():
+            self.onet_data[k] = v.cpu()
+
 
         self.cached_data = preprocess(
             self.path,

@@ -476,11 +476,13 @@ class CDVAE(BaseModule):
         # knowledge distillation loss
 
         # normalize z and onet_rep
-        z = F.normalize(z, dim=-1)
-        onet_rep = F.normalize(onet_rep, dim=-1)
+        if self.hparams.kd_type == 'cosine':
+            z = F.normalize(z, dim=-1)
+            onet_rep = F.normalize(onet_rep, dim=-1)
+            return z * onet_rep
 
-        # return z * onet_rep
-        return F.mse_loss(z, onet_rep)
+        if self.hparams.kd_type == 'mse':
+            return F.mse_loss(z, onet_rep)
 
     def property_loss(self, z, batch):
         return F.mse_loss(self.fc_property(z), batch.y)

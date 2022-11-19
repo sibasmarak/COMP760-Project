@@ -28,7 +28,7 @@ datamodule:
       _target_: cdvae.pl_data.dataset.CrystDataset
       name: Formation energy train
       path: ${data.root_path}/train.csv
-      onet_path: ${data.root_onet_path}/train_rep.pt
+      onet_path: ${data.root_onet_path}/train_rep.pkl
       prop: ${data.prop}
       niggli: ${data.niggli}
       primitive: ${data.primitive}
@@ -40,7 +40,7 @@ datamodule:
       - _target_: cdvae.pl_data.dataset.CrystDataset
         name: Formation energy val
         path: ${data.root_path}/val.csv
-        onet_path: ${data.root_onet_path}/val_rep.pt
+        onet_path: ${data.root_onet_path}/val_rep.pkl
         prop: ${data.prop}
         niggli: ${data.niggli}
         primitive: ${data.primitive}
@@ -52,7 +52,7 @@ datamodule:
       - _target_: cdvae.pl_data.dataset.CrystDataset
         name: Formation energy test
         path: ${data.root_path}/test.csv
-        onet_path: ${data.root_onet_path}/test_rep.pt
+        onet_path: ${data.root_onet_path}/test_rep.pkl
         prop: ${data.prop}
         niggli: ${data.niggli}
         primitive: ${data.primitive}
