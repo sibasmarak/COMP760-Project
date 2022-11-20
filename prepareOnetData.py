@@ -1,5 +1,6 @@
 import torch
 import pandas as pd
+import pickle
 
 
 for split in ['test']:
@@ -11,4 +12,4 @@ for split in ['test']:
         onet_rep = torch.randn(256)
         onet_data[i] = onet_rep
 
-    torch.save(onet_data, f'/home/mila/s/siba-smarak.panigrahi/COMP760-Project/cdvae/data/perov_5/{split}_rep.pkl')
+    pickle.dump(onet_data, open(f'/home/mila/s/siba-smarak.panigrahi/COMP760-Project/cdvae/data/perov_5/{split}_rep.pkl', 'wb'))
