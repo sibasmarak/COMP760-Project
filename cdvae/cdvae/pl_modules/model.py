@@ -487,7 +487,9 @@ class CDVAE(BaseModule):
         if self.hparams.kd_type == 'kl_loss':   
             kl_loss = nn.KLDivLoss(reduction="batchmean")  ##Check if it should be batchmean or mean?
             return kl_loss(z, onet_rep)
-        
+        if self.hparams.kd_type == 'js_loss':   
+            kl_loss = nn.KLDivLoss(reduction="batchmean")  ## Verify this 
+            return 0.5 * (kl_loss(z, (onet_rep + z) / 2. ) + kl_loss(onet_rep, (onet_rep + z) / 2. ))
         
     def property_loss(self, z, batch):
         return F.mse_loss(self.fc_property(z), batch.y)
