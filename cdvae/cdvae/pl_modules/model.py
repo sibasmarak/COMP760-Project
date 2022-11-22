@@ -364,7 +364,7 @@ class CDVAE(BaseModule):
 
         kld_loss = self.kld_loss(mu, log_var)
 
-        kd_targets = batch.onet_rep.reshape(z.shape[0], z.shape[1])
+        kd_targets = batch.onet_rep #.reshape(z.shape[0], z.shape[1])
         kd_loss = self.kd_loss(z, kd_targets)
 
         if self.hparams.predict_property:
@@ -475,18 +475,18 @@ class CDVAE(BaseModule):
     def kd_loss(self, z, onet_rep):
         # knowledge distillation loss
 
-        # normalize z and onet_rep
         if self.hparams.kd_type == 'cosine':
             z = F.normalize(z, dim=-1)
             onet_rep = F.normalize(onet_rep, dim=-1)
-            return z * onet_rep
+            sim = torch.sum(z * onet_rep) / z.size(0)
+            return sim
 
         if self.hparams.kd_type == 'mse':
             return F.mse_loss(z, onet_rep)
         
-        if self.hparams.kd_type == 'kl_loss':   
+        if self.hparams.kd_type == 'kl_loss': 
             kl_loss = nn.KLDivLoss(reduction="batchmean")  ##Check if it should be batchmean or mean?
-            return kl_loss(z, onet_rep)
+            return kl_loss(z, onet_rep).mean()
         
         
     def property_loss(self, z, batch):
