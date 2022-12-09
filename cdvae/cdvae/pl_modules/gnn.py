@@ -13,6 +13,10 @@ from torch_geometric.nn.models.dimenet import (
     Envelope
 #    BesselBasisLayer,  #Not using inbuilt class
 )
+import numpy as np
+from torch import Tensor
+from torch.nn import Embedding, Linear
+from typing import Callable, Optional, Tuple, Union, List, Any
 from math import sqrt, pi as PI
 from torch_sparse import SparseTensor
 
@@ -27,6 +31,19 @@ try:
     import sympy as sym
 except ImportError:
     sym = None
+
+class EmbeddingBlockColor(EmbeddingBlock):
+    def __init__(self, num_radial: int, hidden_channels: int, act: Callable, colors: List[str]):
+        super().__init__()
+        # self.all_lin = torch.stack([Linear(3 * hidden_channels, hidden_channels) for i in  range(len(colors))], dim = 0)
+        self.all_lin = np.array([Linear(3 * hidden_channels, hidden_channels) for i in  range(len(colors))], dim = 0)
+    def forward(self, x: Tensor, rbf: Tensor, i: Tensor, j: Tensor, color: Any) -> Tensor:
+        x = self.emb(x)
+        rbf = self.act(self.lin_rbf(rbf))
+        color_layers = self.all_lin[color]
+        x_edge = torch.cat([x[i], x[j]], dim = 1)
+        return self.act(torch.stack([color_layers[k](x_edge[k]) for k in range(i.shape[0])])) ##Check dimnensions
+        # return self.act(self.all_lin[color](torch.cat([x[i], x[j], rbf], dim=-1))) ##Check dimnensions
 
 ###### Rewrote BesselBasisLayer
 class BesselBasisLayer(torch.nn.Module):
@@ -145,7 +162,65 @@ class InteractionPPBlock(torch.nn.Module):
             h = layer(h)
 
         return h
+        
+class InteractionPPBlockColor(InteractionPPBlock):
+    def __init__(
+        self,
+        hidden_channels,
+        int_emb_size,
+        basis_emb_size,
+        num_spherical,
+        num_radial,
+        num_before_skip,
+        num_after_skip,
+        colors,
+        act=swish,
+    ):
+        super(InteractionPPBlockColor, self).__init__()
+        self.all_layers_before_skip = torch.stack([torch.nn.ModuleList(
+            [
+                ResidualLayer(hidden_channels, act)
+                for _ in range(num_before_skip)
+            ]
+        ) for i in range(len(colors))], dim = 0)
+        self.all_lin = np.array([nn.Linear(hidden_channels, hidden_channels) for i in range(len(colors))], dim = 0)
+        self.layers_after_skip = torch.stack([torch.nn.ModuleList(
+            [
+                ResidualLayer(hidden_channels, act)
+                for _ in range(num_after_skip)
+            ]
+        )], dim = 0)
+    def forward(self, x, rbf, sbf, idx_kj, idx_ji, color):
 
+        # Initial transformations.
+        x_ji = self.act(self.lin_ji(x))
+        x_kj = self.act(self.lin_kj(x))
+
+        # Transformation via Bessel basis.
+        rbf = self.lin_rbf1(rbf)
+        rbf = self.lin_rbf2(rbf)
+        x_kj = x_kj * rbf
+
+        # Down-project embeddings and generate interaction triplet embeddings.
+        x_kj = self.act(self.lin_down(x_kj))
+
+        # Transform via 2D spherical basis.
+        sbf = self.lin_sbf1(sbf)
+        sbf = self.lin_sbf2(sbf)
+        x_kj = x_kj[idx_kj] * sbf
+
+        # Aggregate interactions and up-project embeddings.
+        x_kj = scatter(x_kj, idx_ji, dim=0, dim_size=x.size(0))
+        x_kj = self.act(self.lin_up(x_kj))
+
+        h = x_ji + x_kj
+        for layer in self.layers_before_skip[color]:
+            h = layer(h)
+        h = self.act(self.lin(h)) + x
+        for layer in self.layers_after_skip[color]:
+            h = layer(h)
+
+        return h
 
 class OutputPPBlock(torch.nn.Module):
     def __init__(
@@ -443,6 +518,143 @@ class DimeNetPlusPlusWrap(DimeNetPlusPlus):
     @property
     def num_params(self):
         return sum(p.numel() for p in self.parameters())
+
+
+
+class DimeNetPlusPlusWrapColor(DimeNetPlusPlusWrap):
+    def __init__(
+        self,
+        num_targets,
+        hidden_channels=128,
+        num_blocks=4,
+        int_emb_size=64,
+        basis_emb_size=8,
+        out_emb_channels=256,
+        num_spherical=7,
+        num_radial=6,
+        otf_graph=False,
+        cutoff=10.0,
+        max_num_neighbors=20,
+        envelope_exponent=5,
+        num_before_skip=1,
+        num_after_skip=2,
+        num_output_layers=3,
+        readout='mean',
+        colors=[],
+    ):
+        self.num_targets = num_targets
+        self.cutoff = cutoff
+        self.max_num_neighbors = max_num_neighbors
+        self.otf_graph = otf_graph
+
+        self.readout = readout
+
+        super(DimeNetPlusPlusWrapColor, self).__init__(
+            hidden_channels=hidden_channels,
+            out_channels=num_targets,
+            num_blocks=num_blocks,
+            int_emb_size=int_emb_size,
+            basis_emb_size=basis_emb_size,
+            out_emb_channels=out_emb_channels,
+            num_spherical=num_spherical,
+            num_radial=num_radial,
+            cutoff=cutoff,
+            envelope_exponent=envelope_exponent,
+            num_before_skip=num_before_skip,
+            num_after_skip=num_after_skip,
+            num_output_layers=num_output_layers,
+        )
+        self.colors = colors
+        assert len(self.colors) > 0, 'Please provide coloring pattern'
+        self.emb = EmbeddingBlockColor(num_radial, hidden_channels, self.act, self.colors) ##Define colors in model.py
+
+    def forward(self, data):
+        batch = data.batch
+
+        if self.otf_graph:
+            edge_index, cell_offsets, neighbors = radius_graph_pbc_wrapper(
+                data, self.cutoff, self.max_num_neighbors, data.num_atoms.device
+            )
+            data.edge_index = edge_index
+            data.to_jimages = cell_offsets
+            data.num_bonds = neighbors
+
+        pos = frac_to_cart_coords(
+            data.frac_coords,
+            data.lengths,
+            data.angles,
+            data.num_atoms)
+
+        out = get_pbc_distances(
+            data.frac_coords,
+            data.edge_index,
+            data.lengths,
+            data.angles,
+            data.to_jimages,
+            data.num_atoms,
+            data.num_bonds,
+            return_offsets=True
+        )
+
+        edge_index = out["edge_index"]
+        dist = out["distances"]
+        offsets = out["offsets"]
+
+        j, i = edge_index
+
+        _, _, idx_i, idx_j, idx_k, idx_kj, idx_ji = self.triplets(
+            edge_index, num_nodes=data.atom_types.size(0)
+        )
+
+        # Calculate angles.
+        pos_i = pos[idx_i].detach()
+        pos_j = pos[idx_j].detach()
+        pos_ji, pos_kj = (
+            pos[idx_j].detach() - pos_i + offsets[idx_ji],
+            pos[idx_k].detach() - pos_j + offsets[idx_kj],
+        )
+
+        a = (pos_ji * pos_kj).sum(dim=-1)
+        b = torch.cross(pos_ji, pos_kj).norm(dim=-1)
+        angle = torch.atan2(b, a)
+
+        rbf = self.rbf(dist)
+        sbf = self.sbf(dist, angle, idx_kj)
+        data.color_matrix = torch.tensor([0] * i.shape[1])
+        # Embedding block.
+        x = self.emb(data.atom_types.long(), rbf, i, j, data.color_matrix[i,j]) ##check dimensions
+        # x = self.emb(data.atom_types.long(), rbf, i, j, data.color_matrix[i,j]) ##check dimensions
+        P = self.output_blocks[0](x, rbf, i, num_nodes=pos.size(0))
+
+        # Interaction blocks.
+        for interaction_block, output_block in zip(
+            self.interaction_blocks, self.output_blocks[1:]
+        ):
+            x = interaction_block(x, rbf, sbf, idx_kj, idx_ji)
+            P += output_block(x, rbf, i, num_nodes=pos.size(0))
+
+        # Use mean
+        if batch is None:
+            if self.readout == 'mean':
+                energy = P.mean(dim=0)
+            elif self.readout == 'sum':
+                energy = P.sum(dim=0)
+            elif self.readout == 'cat':
+                import pdb
+                pdb.set_trace()
+                energy = torch.cat([P.sum(dim=0), P.mean(dim=0)])
+            else:
+                raise NotImplementedError
+        else:
+            # TODO: if want to use cat, need two lines here
+            energy = scatter(P, batch, dim=0, reduce=self.readout)
+
+        return energy
+
+    @property
+    def num_params(self):
+        return sum(p.numel() for p in self.parameters())
+
 
 class GemNetTEncoder(nn.Module):
     """Wrapper for GemNetT."""
