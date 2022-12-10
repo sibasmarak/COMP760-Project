@@ -34,16 +34,22 @@ except ImportError:
 
 class EmbeddingBlockColor(EmbeddingBlock):
     def __init__(self, num_radial: int, hidden_channels: int, act: Callable, colors: List[str]):
-        super().__init__()
+        super().__init__(
+            num_radial = num_radial,
+            hidden_channels = hidden_channels,
+            act = act
+        )
         # self.all_lin = torch.stack([Linear(3 * hidden_channels, hidden_channels) for i in  range(len(colors))], dim = 0)
-        self.all_lin = np.array([Linear(3 * hidden_channels, hidden_channels) for i in  range(len(colors))], dim = 0)
+        # self.all_lin = np.array([Linear(3 * hidden_channels, hidden_channels) for i in  range(len(colors))])
+        self.all_lin = np.array([Linear(3 * hidden_channels, hidden_channels) for i in  range(len(colors))])
+
     def forward(self, x: Tensor, rbf: Tensor, i: Tensor, j: Tensor, color: Any) -> Tensor:
         x = self.emb(x)
         rbf = self.act(self.lin_rbf(rbf))
         color_layers = self.all_lin[color]
-        x_edge = torch.cat([x[i], x[j]], dim = 1)
-        return self.act(torch.stack([color_layers[k](x_edge[k]) for k in range(i.shape[0])])) ##Check dimnensions
-        # return self.act(self.all_lin[color](torch.cat([x[i], x[j], rbf], dim=-1))) ##Check dimnensions
+        x_edge = torch.cat([x[i], x[j], rbf], dim = 1)
+        outputs = [color_layers[k].to(device = torch.device('cuda'))(x_edge[k]) for k in range(i.shape[0])]
+        return self.act(torch.stack(outputs)) ##Check dimnensions
 
 ###### Rewrote BesselBasisLayer
 class BesselBasisLayer(torch.nn.Module):
@@ -88,21 +94,21 @@ class InteractionPPBlock(torch.nn.Module):
 
         # Dense transformations of input messages.
         self.lin_kj = nn.Linear(hidden_channels, hidden_channels)
-        self.lin_ji = nn.Linear(hidden_channels, hidden_channels)
+        self.lin_ji = nn.Linear(hidden_channels, hidden_channels)  #Replicate
 
         # Embedding projections for interaction triplets.
         self.lin_down = nn.Linear(hidden_channels, int_emb_size, bias=False)
         self.lin_up = nn.Linear(int_emb_size, hidden_channels, bias=False)
 
         # Residual layers before and after skip connection.
-        self.layers_before_skip = torch.nn.ModuleList(
+        self.layers_before_skip = torch.nn.ModuleList(  #Replicate
             [
                 ResidualLayer(hidden_channels, act)
                 for _ in range(num_before_skip)
             ]
         )
-        self.lin = nn.Linear(hidden_channels, hidden_channels)
-        self.layers_after_skip = torch.nn.ModuleList(
+        self.lin = nn.Linear(hidden_channels, hidden_channels)  #Replicate
+        self.layers_after_skip = torch.nn.ModuleList(    #Replicate
             [
                 ResidualLayer(hidden_channels, act)
                 for _ in range(num_after_skip)
@@ -184,7 +190,7 @@ class InteractionPPBlockColor(InteractionPPBlock):
             ]
         ) for i in range(len(colors))], dim = 0)
         self.all_lin = np.array([nn.Linear(hidden_channels, hidden_channels) for i in range(len(colors))], dim = 0)
-        self.layers_after_skip = torch.stack([torch.nn.ModuleList(
+        self.layers_after_skip = torch.stack([torch.nn.ModuleList(  ##Replicate
             [
                 ResidualLayer(hidden_channels, act)
                 for _ in range(num_after_skip)
@@ -540,7 +546,8 @@ class DimeNetPlusPlusWrapColor(DimeNetPlusPlusWrap):
         num_after_skip=2,
         num_output_layers=3,
         readout='mean',
-        colors=[],
+        colors=[0, 1],
+        act = swish
     ):
         self.num_targets = num_targets
         self.cutoff = cutoff
@@ -551,7 +558,7 @@ class DimeNetPlusPlusWrapColor(DimeNetPlusPlusWrap):
 
         super(DimeNetPlusPlusWrapColor, self).__init__(
             hidden_channels=hidden_channels,
-            out_channels=num_targets,
+            num_targets=num_targets,
             num_blocks=num_blocks,
             int_emb_size=int_emb_size,
             basis_emb_size=basis_emb_size,
@@ -564,6 +571,7 @@ class DimeNetPlusPlusWrapColor(DimeNetPlusPlusWrap):
             num_after_skip=num_after_skip,
             num_output_layers=num_output_layers,
         )
+        self.act = act
         self.colors = colors
         assert len(self.colors) > 0, 'Please provide coloring pattern'
         self.emb = EmbeddingBlockColor(num_radial, hidden_channels, self.act, self.colors) ##Define colors in model.py
@@ -620,9 +628,13 @@ class DimeNetPlusPlusWrapColor(DimeNetPlusPlusWrap):
 
         rbf = self.rbf(dist)
         sbf = self.sbf(dist, angle, idx_kj)
-        data.color_matrix = torch.tensor([0] * i.shape[1])
+        ###COMMENT
+        data.color_matrix = torch.tensor([0] * i.shape[0])
+        data.color_matrix[0] = data.color_matrix[1] = 1
+        ###
         # Embedding block.
-        x = self.emb(data.atom_types.long(), rbf, i, j, data.color_matrix[i,j]) ##check dimensions
+        x = self.emb(data.atom_types.long(), rbf, i, j, data.color_matrix) ##check dimensions
+        print('Shape after embedding: ', x.shape)
         # x = self.emb(data.atom_types.long(), rbf, i, j, data.color_matrix[i,j]) ##check dimensions
         P = self.output_blocks[0](x, rbf, i, num_nodes=pos.size(0))
 
