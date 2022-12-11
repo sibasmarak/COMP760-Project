@@ -484,6 +484,18 @@ class CDVAE(BaseModule):
         if self.hparams.kd_type == 'mse':
             return F.mse_loss(z, onet_rep)
         
+        if self.hparams.kd_type == 'l1':
+            return F.l1_loss(z, onet_rep)
+
+        if self.hparams.kd_type == 'tanh':
+            z = F.normalize(z, dim=-1)
+            onet_rep = F.normalize(onet_rep, dim=-1)
+            sim = torch.sum(z * onet_rep) / z.size(0)
+            tanh_sim = F.tanh(sim + 1)
+            return tanh_sim
+
+        
+        # do not use these two
         if self.hparams.kd_type == 'kl_loss': 
             kl_loss = nn.KLDivLoss(reduction="batchmean")  ##Check if it should be batchmean or mean?
             return kl_loss(z, onet_rep).mean()

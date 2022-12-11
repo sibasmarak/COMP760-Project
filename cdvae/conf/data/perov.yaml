@@ -29,6 +29,8 @@ datamodule:
       name: Formation energy train
       path: ${data.root_path}/train.csv
       onet_path: ${data.root_onet_path}/train_rep.pkl
+      color_matrix_path: ${oc.env:PROJECT_ROOT}/common/colored_matrices.pkl
+      lattice_type: ptriclinic # pcubic
       prop: ${data.prop}
       niggli: ${data.niggli}
       primitive: ${data.primitive}
@@ -41,6 +43,8 @@ datamodule:
         name: Formation energy val
         path: ${data.root_path}/val.csv
         onet_path: ${data.root_onet_path}/val_rep.pkl
+        color_matrix_path: ${oc.env:PROJECT_ROOT}/common/colored_matrices.pkl
+        lattice_type: ptriclinic # pcubic
         prop: ${data.prop}
         niggli: ${data.niggli}
         primitive: ${data.primitive}
@@ -53,6 +57,8 @@ datamodule:
         name: Formation energy test
         path: ${data.root_path}/test.csv
         onet_path: ${data.root_onet_path}/test_rep.pkl
+        color_matrix_path: ${oc.env:PROJECT_ROOT}/common/colored_matrices.pkl
+        lattice_type: ptriclinic # pcubic
         prop: ${data.prop}
         niggli: ${data.niggli}
         primitive: ${data.primitive}
