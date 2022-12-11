@@ -179,23 +179,31 @@ class InteractionPPBlockColor(InteractionPPBlock):
         num_radial,
         num_before_skip,
         num_after_skip,
-        colors,
+        colors = [0,1],
         act=swish,
     ):
-        super(InteractionPPBlockColor, self).__init__()
-        self.all_layers_before_skip = torch.stack([torch.nn.ModuleList(
-            [
+        super(InteractionPPBlockColor, self).__init__(
+            hidden_channels = hidden_channels,
+            int_emb_size = int_emb_size,
+            basis_emb_size = basis_emb_size,
+            num_spherical = num_spherical,
+            num_radial = num_radial,
+            num_before_skip = num_before_skip,
+            num_after_skip = num_after_skip,
+        )
+        self.all_layers_before_skip = np.array([torch.nn.Sequential(  ##Changed ModuleList to Sequential
+            *[
                 ResidualLayer(hidden_channels, act)
                 for _ in range(num_before_skip)
             ]
-        ) for i in range(len(colors))], dim = 0)
-        self.all_lin = np.array([nn.Linear(hidden_channels, hidden_channels) for i in range(len(colors))], dim = 0)
-        self.layers_after_skip = torch.stack([torch.nn.ModuleList(  ##Replicate
-            [
+        ) for i in range(len(colors))])
+        self.all_lin = np.array([nn.Linear(hidden_channels, hidden_channels) for i in range(len(colors))])
+        self.all_layers_after_skip = np.array([torch.nn.Sequential(  ##Changed ModuleList to Sequential
+            *[
                 ResidualLayer(hidden_channels, act)
                 for _ in range(num_after_skip)
             ]
-        )], dim = 0)
+        ) for i in range(len(colors))])
     def forward(self, x, rbf, sbf, idx_kj, idx_ji, color):
 
         # Initial transformations.
@@ -220,11 +228,20 @@ class InteractionPPBlockColor(InteractionPPBlock):
         x_kj = self.act(self.lin_up(x_kj))
 
         h = x_ji + x_kj
-        for layer in self.layers_before_skip[color]:
-            h = layer(h)
-        h = self.act(self.lin(h)) + x
-        for layer in self.layers_after_skip[color]:
-            h = layer(h)
+        color_layers_before_skip = self.all_layers_before_skip[color][:,0]
+        outputs_before_skip = [color_layers_before_skip[k].to(device = torch.device('cuda'))(h[k]) for k in range(h.shape[0])]
+        h = torch.stack(outputs_before_skip)
+        # for layer in self.layers_before_skip:
+        #     h = layer(h)
+        color_linear = self.all_lin[color]
+        outputs_linear = [color_linear[k].to(device = torch.device('cuda'))(h[k]) for k in range(h.shape[0])]
+        h = self.act(torch.stack(outputs_linear)) + x
+        # h = self.act(self.lin(h)) + x
+        color_layers_after_skip = self.all_layers_after_skip[color][:,0]
+        outputs_after_skip = [color_layers_after_skip[k].to(device = torch.device('cuda'))(h[k]) for k in range(h.shape[0])]
+        h = torch.stack(outputs_after_skip)
+        # for layer in self.layers_after_skip:
+        #     h = layer(h)
 
         return h
 
@@ -575,6 +592,21 @@ class DimeNetPlusPlusWrapColor(DimeNetPlusPlusWrap):
         self.colors = colors
         assert len(self.colors) > 0, 'Please provide coloring pattern'
         self.emb = EmbeddingBlockColor(num_radial, hidden_channels, self.act, self.colors) ##Define colors in model.py
+        self.interaction_blocks = torch.nn.ModuleList(
+            [
+                InteractionPPBlockColor(
+                    hidden_channels,
+                    int_emb_size,
+                    basis_emb_size,
+                    num_spherical,
+                    num_radial,
+                    num_before_skip,
+                    num_after_skip,
+                    act = act,
+                )
+                for _ in range(num_blocks)
+            ]
+        )
 
     def forward(self, data):
         batch = data.batch
@@ -634,7 +666,6 @@ class DimeNetPlusPlusWrapColor(DimeNetPlusPlusWrap):
         ###
         # Embedding block.
         x = self.emb(data.atom_types.long(), rbf, i, j, data.color_matrix) ##check dimensions
-        print('Shape after embedding: ', x.shape)
         # x = self.emb(data.atom_types.long(), rbf, i, j, data.color_matrix[i,j]) ##check dimensions
         P = self.output_blocks[0](x, rbf, i, num_nodes=pos.size(0))
 
@@ -642,9 +673,9 @@ class DimeNetPlusPlusWrapColor(DimeNetPlusPlusWrap):
         for interaction_block, output_block in zip(
             self.interaction_blocks, self.output_blocks[1:]
         ):
-            x = interaction_block(x, rbf, sbf, idx_kj, idx_ji)
+            x = interaction_block(x, rbf, sbf, idx_kj, idx_ji, data.color_matrix)
             P += output_block(x, rbf, i, num_nodes=pos.size(0))
-
+        print('Shape after Interaction: ', x.shape)
         # Use mean
         if batch is None:
             if self.readout == 'mean':
