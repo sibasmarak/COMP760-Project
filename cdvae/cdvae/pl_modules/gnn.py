@@ -33,7 +33,7 @@ except ImportError:
     sym = None
 
 class EmbeddingBlockColor(EmbeddingBlock):
-    def __init__(self, num_radial: int, hidden_channels: int, act: Callable, colors: List[str]):
+    def __init__(self, num_radial: int, hidden_channels: int, act: Callable, colors: List[int]):
         super().__init__(
             num_radial = num_radial,
             hidden_channels = hidden_channels,
@@ -563,7 +563,7 @@ class DimeNetPlusPlusWrapColor(DimeNetPlusPlusWrap):
         num_after_skip=2,
         num_output_layers=3,
         readout='mean',
-        colors=[0, 1],
+        num_colors=64,
         act = swish
     ):
         self.num_targets = num_targets
@@ -589,7 +589,7 @@ class DimeNetPlusPlusWrapColor(DimeNetPlusPlusWrap):
             num_output_layers=num_output_layers,
         )
         self.act = act
-        self.colors = colors
+        self.colors = list(range(num_colors))
         assert len(self.colors) > 0, 'Please provide coloring pattern'
         self.emb = EmbeddingBlockColor(num_radial, hidden_channels, self.act, self.colors) ##Define colors in model.py
         self.interaction_blocks = torch.nn.ModuleList(
@@ -660,12 +660,9 @@ class DimeNetPlusPlusWrapColor(DimeNetPlusPlusWrap):
 
         rbf = self.rbf(dist)
         sbf = self.sbf(dist, angle, idx_kj)
-        ###COMMENT
-        data.color_matrix = torch.tensor([0] * i.shape[0])
-        data.color_matrix[0] = data.color_matrix[1] = 1
         ###
         # Embedding block.
-        x = self.emb(data.atom_types.long(), rbf, i, j, data.color_matrix) ##check dimensions
+        x = self.emb(data.atom_types.long(), rbf, i, j, data.color_matrix[i,j]) ##check dimensions
         # x = self.emb(data.atom_types.long(), rbf, i, j, data.color_matrix[i,j]) ##check dimensions
         P = self.output_blocks[0](x, rbf, i, num_nodes=pos.size(0))
 
@@ -673,9 +670,8 @@ class DimeNetPlusPlusWrapColor(DimeNetPlusPlusWrap):
         for interaction_block, output_block in zip(
             self.interaction_blocks, self.output_blocks[1:]
         ):
-            x = interaction_block(x, rbf, sbf, idx_kj, idx_ji, data.color_matrix)
+            x = interaction_block(x, rbf, sbf, idx_kj, idx_ji, data.color_matrix[i,j])
             P += output_block(x, rbf, i, num_nodes=pos.size(0))
-        print('Shape after Interaction: ', x.shape)
         # Use mean
         if batch is None:
             if self.readout == 'mean':
