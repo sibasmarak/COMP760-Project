@@ -14,10 +14,10 @@ from cdvae.common.data_utils import (
 
 
 class CrystDataset(Dataset):
-    def __init__(self, name: ValueNode, path: ValueNode, onet_path: ValueNode,
-                 prop: ValueNode, niggli: ValueNode, primitive: ValueNode,
-                 graph_method: ValueNode, preprocess_workers: ValueNode,
-                 lattice_scale_method: ValueNode,
+    def __init__(self, name: ValueNode, path: ValueNode, onet_path: ValueNode, 
+                 color_matrix_path: ValueNode, prop: ValueNode, niggli: ValueNode, 
+                 primitive: ValueNode, graph_method: ValueNode, preprocess_workers: ValueNode,
+                 lattice_scale_method: ValueNode, lattice_type: ValueNode,
                  **kwargs):
         super().__init__()
         self.path = path
@@ -29,6 +29,8 @@ class CrystDataset(Dataset):
         self.graph_method = graph_method
         self.lattice_scale_method = lattice_scale_method
         self.onet_data = pickle.load(open(onet_path, 'rb'))
+        self.color_matrix = pickle.load(open(color_matrix_path, 'rb'))
+        self.lattice_type = lattice_type
 
         # transfer to cpu to avoid memory leak
         for k, v in self.onet_data.items():
@@ -74,6 +76,7 @@ class CrystDataset(Dataset):
             num_bonds=edge_indices.shape[0],
             num_nodes=num_atoms,  # special attribute used for batching in pytorch geometric
             onet_rep=torch.Tensor(data_dict['onet_rep']).view(1, -1),
+            color_matrix= torch.Tensor(self.colored_matrix[self.lattice_type]), 
             y=prop.view(1, -1),
         )
         return data
