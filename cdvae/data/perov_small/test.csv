@@ -1,0 +1,265 @@
+,Unnamed: 0,material_id,cif,formula,heat_all,heat_ref,dir_gap,ind_gap
+0,996,3961,"# generated using pymatgen
+data_TiOsNOF
+_symmetry_space_group_name_H-M   'P 1'
+_cell_length_a   8.1126432
+_cell_length_b   8.1126432
+_cell_length_c   8.1126432
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   1
+_chemical_formula_structural   TiOsNOF
+_chemical_formula_sum   'Ti1 Os1 N1 O1 F1'
+_cell_volume   66.74168089
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ti  Ti0  1  -0.19539453  0.0  0.0  1
+  Os  Os1  1  0.388099675  0.25  0.25  1
+  F  F2  1  0.207642  0.0  0.25  1
+  N  N3  1  0.3710004  0.25  0.0  1
+  O  O4  1  0.115716405  0.25  0.25  1
+  Ti  Ti5  1  -0.19539453  0.0  0.5  1
+  Os  Os6  1  0.388099675  0.25  0.75  1
+  F  F7  1  0.207642  0.0  0.75  1
+  N  N8  1  0.3710004  0.25  0.5  1
+  O  O9  1  0.115716405  0.25  0.75  1
+  Ti  Ti10  1  -0.19539453  0.5  0.0  1
+  Os  Os11  1  0.388099675  0.75  0.25  1
+  F  F12  1  0.207642  0.5  0.25  1
+  N  N13  1  0.3710004  0.75  0.0  1
+  O  O14  1  0.115716405  0.75  0.25  1
+  Ti  Ti15  1  0.30460547  0.0  0.0  1
+  Os  Os16  1  0.888099675  0.25  0.25  1
+  F  F17  1  0.707642  0.0  0.25  1
+  N  N18  1  0.8710004  0.25  0.0  1
+  O  O19  1  0.615716405  0.25  0.25  1
+  Ti  Ti20  1  0.30460547  0.5  0.0  1
+  Os  Os21  1  0.888099675  0.75  0.25  1
+  F  F22  1  0.707642  0.5  0.25  1
+  N  N23  1  0.8710004  0.75  0.0  1
+  O  O24  1  0.615716405  0.75  0.25  1
+  Ti  Ti25  1  0.30460547  0.0  0.5  1
+  Os  Os26  1  0.888099675  0.25  0.75  1
+  F  F27  1  0.707642  0.0  0.75  1
+  N  N28  1  0.8710004  0.25  0.5  1
+  O  O29  1  0.615716405  0.25  0.75  1
+  Ti  Ti30  1  -0.19539453  0.5  0.5  1
+  Os  Os31  1  0.388099675  0.75  0.75  1
+  F  F32  1  0.207642  0.5  0.75  1
+  N  N33  1  0.3710004  0.75  0.5  1
+  O  O34  1  0.115716405  0.75  0.75  1
+  Ti  Ti35  1  0.30460547  0.5  0.5  1
+  Os  Os36  1  0.888099675  0.75  0.75  1
+  F  F37  1  0.707642  0.5  0.75  1
+  N  N38  1  0.8710004  0.75  0.5  1
+  O  O39  1  0.615716405  0.75  0.75  1",TiOsOFN,1.16,1.4383314936574307,0.0,0.0
+1,13356,11922,"# generated using pymatgen
+data_TlRuO2F
+_symmetry_space_group_name_H-M   'P 1'
+_cell_length_a   8.69806912
+_cell_length_b   8.69806912
+_cell_length_c   8.69806912
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   1
+_chemical_formula_structural   TlRuO2F
+_chemical_formula_sum   'Tl1 Ru1 O2 F1'
+_cell_volume   82.25808174
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ru  Ru0  1  0.000168625  0.0  0.0  1
+  Tl  Tl1  1  0.25288365  0.25  0.25  1
+  F  F2  1  0.249732615  0.0  0.25  1
+  O  O3  1  0.24988173  0.25  0.0  1
+  O  O4  1  0.002367075  0.25  0.25  1
+  Ru  Ru5  1  0.000168625  0.0  0.5  1
+  Tl  Tl6  1  0.25288365  0.25  0.75  1
+  F  F7  1  0.249732615  0.0  0.75  1
+  O  O8  1  0.24988173  0.25  0.5  1
+  O  O9  1  0.002367075  0.25  0.75  1
+  Ru  Ru10  1  0.000168625  0.5  0.0  1
+  Tl  Tl11  1  0.25288365  0.75  0.25  1
+  F  F12  1  0.249732615  0.5  0.25  1
+  O  O13  1  0.24988173  0.75  0.0  1
+  O  O14  1  0.002367075  0.75  0.25  1
+  Ru  Ru15  1  0.500168625  0.0  0.0  1
+  Tl  Tl16  1  0.75288365  0.25  0.25  1
+  F  F17  1  0.749732615  0.0  0.25  1
+  O  O18  1  0.74988173  0.25  0.0  1
+  O  O19  1  0.502367075  0.25  0.25  1
+  Ru  Ru20  1  0.500168625  0.5  0.0  1
+  Tl  Tl21  1  0.75288365  0.75  0.25  1
+  F  F22  1  0.749732615  0.5  0.25  1
+  O  O23  1  0.74988173  0.75  0.0  1
+  O  O24  1  0.502367075  0.75  0.25  1
+  Ru  Ru25  1  0.500168625  0.0  0.5  1
+  Tl  Tl26  1  0.75288365  0.25  0.75  1
+  F  F27  1  0.749732615  0.0  0.75  1
+  O  O28  1  0.74988173  0.25  0.5  1
+  O  O29  1  0.502367075  0.25  0.75  1
+  Ru  Ru30  1  0.000168625  0.5  0.5  1
+  Tl  Tl31  1  0.25288365  0.75  0.75  1
+  F  F32  1  0.249732615  0.5  0.75  1
+  O  O33  1  0.24988173  0.75  0.5  1
+  O  O34  1  0.002367075  0.75  0.75  1
+  Ru  Ru35  1  0.500168625  0.5  0.5  1
+  Tl  Tl36  1  0.75288365  0.75  0.75  1
+  F  F37  1  0.749732615  0.5  0.75  1
+  O  O38  1  0.74988173  0.75  0.5  1
+  O  O39  1  0.502367075  0.75  0.75  1",RuTlO2F,1.66,1.604895907125141,0.0,0.0
+2,17389,6694,"# generated using pymatgen
+data_BiPtN2O
+_symmetry_space_group_name_H-M   'P 1'
+_cell_length_a   8.5968978
+_cell_length_b   8.5968978
+_cell_length_c   8.5968978
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   1
+_chemical_formula_structural   BiPtN2O
+_chemical_formula_sum   'Bi1 Pt1 N2 O1'
+_cell_volume   79.42099162
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Pt  Pt0  1  0.149986285  0.0  0.0  1
+  Bi  Bi1  1  0.269967105  0.25  0.25  1
+  N  N2  1  0.184171725  0.0  0.25  1
+  N  N3  1  0.184171725  0.25  0.0  1
+  O  O4  1  0.005413025  0.25  0.25  1
+  Pt  Pt5  1  0.149986285  0.0  0.5  1
+  Bi  Bi6  1  0.269967105  0.25  0.75  1
+  N  N7  1  0.184171725  0.0  0.75  1
+  N  N8  1  0.184171725  0.25  0.5  1
+  O  O9  1  0.005413025  0.25  0.75  1
+  Pt  Pt10  1  0.149986285  0.5  0.0  1
+  Bi  Bi11  1  0.269967105  0.75  0.25  1
+  N  N12  1  0.184171725  0.5  0.25  1
+  N  N13  1  0.184171725  0.75  0.0  1
+  O  O14  1  0.005413025  0.75  0.25  1
+  Pt  Pt15  1  0.649986285  0.0  0.0  1
+  Bi  Bi16  1  0.769967105  0.25  0.25  1
+  N  N17  1  0.684171725  0.0  0.25  1
+  N  N18  1  0.684171725  0.25  0.0  1
+  O  O19  1  0.505413025  0.25  0.25  1
+  Pt  Pt20  1  0.649986285  0.5  0.0  1
+  Bi  Bi21  1  0.769967105  0.75  0.25  1
+  N  N22  1  0.684171725  0.5  0.25  1
+  N  N23  1  0.684171725  0.75  0.0  1
+  O  O24  1  0.505413025  0.75  0.25  1
+  Pt  Pt25  1  0.649986285  0.0  0.5  1
+  Bi  Bi26  1  0.769967105  0.25  0.75  1
+  N  N27  1  0.684171725  0.0  0.75  1
+  N  N28  1  0.684171725  0.25  0.5  1
+  O  O29  1  0.505413025  0.25  0.75  1
+  Pt  Pt30  1  0.149986285  0.5  0.5  1
+  Bi  Bi31  1  0.269967105  0.75  0.75  1
+  N  N32  1  0.184171725  0.5  0.75  1
+  N  N33  1  0.184171725  0.75  0.5  1
+  O  O34  1  0.005413025  0.75  0.75  1
+  Pt  Pt35  1  0.649986285  0.5  0.5  1
+  Bi  Bi36  1  0.769967105  0.75  0.75  1
+  N  N37  1  0.684171725  0.5  0.75  1
+  N  N38  1  0.684171725  0.75  0.5  1
+  O  O39  1  0.505413025  0.75  0.75  1",PtBiON2,1.56,1.5696792181375208,0.0,0.0
+3,5951,3335,"# generated using pymatgen
+data_VRhNOF
+_symmetry_space_group_name_H-M   'P 1'
+_cell_length_a   8.04540688
+_cell_length_b   8.04540688
+_cell_length_c   8.04540688
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   1
+_chemical_formula_structural   VRhNOF
+_chemical_formula_sum   'V1 Rh1 N1 O1 F1'
+_cell_volume   65.09596203
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  V  V0  1  0.000246875  0.0  0.0  1
+  Rh  Rh1  1  0.252240565  0.25  0.25  1
+  F  F2  1  0.249966495  0.0  0.25  1
+  N  N3  1  0.24984257  0.25  0.0  1
+  O  O4  1  0.002279085  0.25  0.25  1
+  V  V5  1  0.000246875  0.0  0.5  1
+  Rh  Rh6  1  0.252240565  0.25  0.75  1
+  F  F7  1  0.249966495  0.0  0.75  1
+  N  N8  1  0.24984257  0.25  0.5  1
+  O  O9  1  0.002279085  0.25  0.75  1
+  V  V10  1  0.000246875  0.5  0.0  1
+  Rh  Rh11  1  0.252240565  0.75  0.25  1
+  F  F12  1  0.249966495  0.5  0.25  1
+  N  N13  1  0.24984257  0.75  0.0  1
+  O  O14  1  0.002279085  0.75  0.25  1
+  V  V15  1  0.500246875  0.0  0.0  1
+  Rh  Rh16  1  0.752240565  0.25  0.25  1
+  F  F17  1  0.749966495  0.0  0.25  1
+  N  N18  1  0.74984257  0.25  0.0  1
+  O  O19  1  0.502279085  0.25  0.25  1
+  V  V20  1  0.500246875  0.5  0.0  1
+  Rh  Rh21  1  0.752240565  0.75  0.25  1
+  F  F22  1  0.749966495  0.5  0.25  1
+  N  N23  1  0.74984257  0.75  0.0  1
+  O  O24  1  0.502279085  0.75  0.25  1
+  V  V25  1  0.500246875  0.0  0.5  1
+  Rh  Rh26  1  0.752240565  0.25  0.75  1
+  F  F27  1  0.749966495  0.0  0.75  1
+  N  N28  1  0.74984257  0.25  0.5  1
+  O  O29  1  0.502279085  0.25  0.75  1
+  V  V30  1  0.000246875  0.5  0.5  1
+  Rh  Rh31  1  0.252240565  0.75  0.75  1
+  F  F32  1  0.249966495  0.5  0.75  1
+  N  N33  1  0.24984257  0.75  0.5  1
+  O  O34  1  0.002279085  0.75  0.75  1
+  V  V35  1  0.500246875  0.5  0.5  1
+  Rh  Rh36  1  0.752240565  0.75  0.75  1
+  F  F37  1  0.749966495  0.5  0.75  1
+  N  N38  1  0.74984257  0.75  0.5  1
+  O  O39  1  0.502279085  0.75  0.75  1",VRhOFN,1.56,1.5667132600301656,0.0,0.0

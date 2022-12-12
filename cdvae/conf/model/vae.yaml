@@ -11,7 +11,7 @@ cost_composition: 1.
 cost_edge: 10.
 cost_kd: 1.
 cost_property: 1.
-kd_type: mse
+kd_type: False
 beta: 0.01
 teacher_forcing_lattice: true
 teacher_forcing_max_epoch: ${data.teacher_forcing_max_epoch}

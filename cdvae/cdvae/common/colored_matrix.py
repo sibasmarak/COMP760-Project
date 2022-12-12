@@ -46,7 +46,7 @@ for key, gen in generators.items():
     m = len(gen[0])
     colored_matrix = torch.zeros((n, m))
     for k, v in colored_matrix_dict.items():
-        colored_matrix[k] = v
+        colored_matrix[k] = int(v)
 
     colored_matrices[key] = colored_matrix
 

@@ -17,6 +17,8 @@ from cdvae.common.data_utils import (
 from cdvae.pl_modules.embeddings import MAX_ATOMIC_NUM
 from cdvae.pl_modules.embeddings import KHOT_EMBEDDINGS
 
+import os
+os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
 def build_mlp(in_dim, hidden_dim, fc_num_layers, out_dim):
     mods = [nn.Linear(in_dim, hidden_dim), nn.ReLU()]
@@ -363,8 +365,10 @@ class CDVAE(BaseModule):
 
         kld_loss = self.kld_loss(mu, log_var)
 
-        kd_targets = batch.onet_rep #.reshape(z.shape[0], z.shape[1])
-        kd_loss = self.kd_loss(z, kd_targets)
+        kd_loss = 0
+        if not self.hparams.kd_type == False:
+            kd_targets = batch.onet_rep #.reshape(z.shape[0], z.shape[1])
+            kd_loss = self.kd_loss(z, kd_targets)
 
         if self.hparams.predict_property:
             property_loss = self.property_loss(z, batch)

@@ -45,8 +45,10 @@ class EmbeddingBlockColor(EmbeddingBlock):
 
     def forward(self, x: Tensor, rbf: Tensor, i: Tensor, j: Tensor, color: Any) -> Tensor:
         x = self.emb(x)
+        print(x.device, rbf.device)
         rbf = self.act(self.lin_rbf(rbf))
-        color_layers = self.all_lin[color]
+        print('DEBUG: act done')
+        color_layers = self.all_lin[color.detach().cpu().numpy().astype(int)]
         x_edge = torch.cat([x[i], x[j], rbf], dim = 1)
         outputs = [color_layers[k].to(device = torch.device('cuda'))(x_edge[k]) for k in range(i.shape[0])]
         return self.act(torch.stack(outputs)) ##Check dimnensions
@@ -179,7 +181,7 @@ class InteractionPPBlockColor(InteractionPPBlock):
         num_radial,
         num_before_skip,
         num_after_skip,
-        colors = [0,1],
+        num_colors,
         act=swish,
     ):
         super(InteractionPPBlockColor, self).__init__(
@@ -191,19 +193,22 @@ class InteractionPPBlockColor(InteractionPPBlock):
             num_before_skip = num_before_skip,
             num_after_skip = num_after_skip,
         )
+        self.colors = list(range(num_colors))
+        assert len(self.colors) > 0, 'Please provide coloring pattern'
+
         self.all_layers_before_skip = np.array([torch.nn.Sequential(  ##Changed ModuleList to Sequential
             *[
                 ResidualLayer(hidden_channels, act)
                 for _ in range(num_before_skip)
             ]
-        ) for i in range(len(colors))])
-        self.all_lin = np.array([nn.Linear(hidden_channels, hidden_channels) for i in range(len(colors))])
+        ) for i in range(len(self.colors))])
+        self.all_lin = np.array([nn.Linear(hidden_channels, hidden_channels) for i in range(len(self.colors))])
         self.all_layers_after_skip = np.array([torch.nn.Sequential(  ##Changed ModuleList to Sequential
             *[
                 ResidualLayer(hidden_channels, act)
                 for _ in range(num_after_skip)
             ]
-        ) for i in range(len(colors))])
+        ) for i in range(len(self.colors))])
     def forward(self, x, rbf, sbf, idx_kj, idx_ji, color):
 
         # Initial transformations.
@@ -228,16 +233,16 @@ class InteractionPPBlockColor(InteractionPPBlock):
         x_kj = self.act(self.lin_up(x_kj))
 
         h = x_ji + x_kj
-        color_layers_before_skip = self.all_layers_before_skip[color][:,0]
+        color_layers_before_skip = self.all_layers_before_skip[color.detach().cpu().numpy().astype(int)][:,0]
         outputs_before_skip = [color_layers_before_skip[k].to(device = torch.device('cuda'))(h[k]) for k in range(h.shape[0])]
         h = torch.stack(outputs_before_skip)
         # for layer in self.layers_before_skip:
         #     h = layer(h)
-        color_linear = self.all_lin[color]
+        color_linear = self.all_lin[color.detach().cpu().numpy().astype(int)]
         outputs_linear = [color_linear[k].to(device = torch.device('cuda'))(h[k]) for k in range(h.shape[0])]
         h = self.act(torch.stack(outputs_linear)) + x
         # h = self.act(self.lin(h)) + x
-        color_layers_after_skip = self.all_layers_after_skip[color][:,0]
+        color_layers_after_skip = self.all_layers_after_skip[color.detach().cpu().numpy().astype(int)][:,0]
         outputs_after_skip = [color_layers_after_skip[k].to(device = torch.device('cuda'))(h[k]) for k in range(h.shape[0])]
         h = torch.stack(outputs_after_skip)
         # for layer in self.layers_after_skip:
@@ -563,7 +568,7 @@ class DimeNetPlusPlusWrapColor(DimeNetPlusPlusWrap):
         num_after_skip=2,
         num_output_layers=3,
         readout='mean',
-        num_colors=64,
+        num_colors=256, # 1023 for ptriclinic and 383 for pcubic
         act = swish
     ):
         self.num_targets = num_targets
@@ -602,6 +607,7 @@ class DimeNetPlusPlusWrapColor(DimeNetPlusPlusWrap):
                     num_radial,
                     num_before_skip,
                     num_after_skip,
+                    num_colors,
                     act = act,
                 )
                 for _ in range(num_blocks)
@@ -662,16 +668,28 @@ class DimeNetPlusPlusWrapColor(DimeNetPlusPlusWrap):
         sbf = self.sbf(dist, angle, idx_kj)
         ###
         # Embedding block.
-        x = self.emb(data.atom_types.long(), rbf, i, j, data.color_matrix[i,j]) ##check dimensions
-        # x = self.emb(data.atom_types.long(), rbf, i, j, data.color_matrix[i,j]) ##check dimensions
+        print('DEBUG: rbf, sbf')
+        print('DEBUG: cm', data.color_matrix)
+        print('DEBUG: i', i)
+        print('DEBUG: j', j)
+
+        print('DEBUG: cm-shape', data.color_matrix.shape)
+        print('DEBUG: cm-i-j shape', data.color_matrix[i, j].shape)
+        print('DEBUG: cm-i-j', data.color_matrix[i, j])
+
+        x = self.emb(data.atom_types.long(), rbf, i, j, data.color_matrix[i, j]) 
+        print('DEBUG: Embedding Block Done', x.shape)
         P = self.output_blocks[0](x, rbf, i, num_nodes=pos.size(0))
+        print('DEBUG: Output Block Done', P.shape)
 
         # Interaction blocks.
         for interaction_block, output_block in zip(
             self.interaction_blocks, self.output_blocks[1:]
         ):
             x = interaction_block(x, rbf, sbf, idx_kj, idx_ji, data.color_matrix[i,j])
+            print('DEBUG: Interaction Block Done', x.shape)
             P += output_block(x, rbf, i, num_nodes=pos.size(0))
+            print('DEBUG: Output Block Done', x.shape)
         # Use mean
         if batch is None:
             if self.readout == 'mean':
