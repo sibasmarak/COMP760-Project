@@ -155,5 +155,5 @@ dependencies:
     - wheel==0.37.1
     - yarl==1.8.1
     - zipp==3.10.0
-prefix: /home/mila/p/prashant.govindarajan/.conda/envs/cdvae
+prefix: /home/mila/p/prashant.govindarajan/.conda/envs/COMP760
 
