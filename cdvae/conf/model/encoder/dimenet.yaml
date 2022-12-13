@@ -15,5 +15,5 @@ envelope_exponent: 5
 num_before_skip: 1
 num_after_skip: 2
 num_output_layers: 3
-num_colors: 1024
+num_colors: 256 # 383 for pcubic; 256 for ptriclinic
 readout: ${data.readout}

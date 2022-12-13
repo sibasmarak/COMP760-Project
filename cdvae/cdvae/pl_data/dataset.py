@@ -75,7 +75,7 @@ class CrystDataset(Dataset):
             num_atoms=num_atoms,
             num_bonds=edge_indices.shape[0],
             num_nodes=num_atoms,  # special attribute used for batching in pytorch geometric
-            onet_rep=torch.Tensor(data_dict['onet_rep']).view(1, -1),
+            # onet_rep=torch.Tensor(data_dict['onet_rep']).view(1, -1),
             color_matrix= torch.Tensor(self.color_matrix[self.lattice_type]), 
             y=prop.view(1, -1),
         )

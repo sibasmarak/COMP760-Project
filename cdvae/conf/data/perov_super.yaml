@@ -21,6 +21,12 @@ teacher_forcing_max_epoch: 1500
 
 datamodule:
   _target_: cdvae.pl_data.datamodule.CrystDataModule
+  
+  load_data: 
+    preprocessed: True
+    preprocessed_train: ${data.root_path}/train_super.pt
+    preprocessed_val: ${data.root_path}/val_super.pt
+    preprocessed_test: ${data.root_path}/test_super.pt
 
   datasets:
     train:
@@ -34,7 +40,7 @@ datamodule:
       lattice_scale_method: ${data.lattice_scale_method}
       preprocess_workers: ${data.preprocess_workers}
       color_matrix_path: ${oc.env:PROJECT_ROOT}/cdvae/common/colored_matrices.pkl
-      lattice_type: ptriclinic # pcubic, ptriclinic
+      lattice_type: pcubic # pcubic, ptriclinic
       onet_path: ${oc.env:PROJECT_ROOT}/data/perov_5/train_rep.pkl
 
     val:
@@ -48,7 +54,7 @@ datamodule:
         lattice_scale_method: ${data.lattice_scale_method}
         preprocess_workers: ${data.preprocess_workers}
         color_matrix_path: ${oc.env:PROJECT_ROOT}/cdvae/common/colored_matrices.pkl
-        lattice_type: ptriclinic # pcubic, ptriclinic
+        lattice_type: pcubic # pcubic, ptriclinic
         onet_path: ${oc.env:PROJECT_ROOT}/data/perov_5/val_rep.pkl
 
     test:
@@ -62,7 +68,7 @@ datamodule:
         lattice_scale_method: ${data.lattice_scale_method}
         preprocess_workers: ${data.preprocess_workers}
         color_matrix_path: ${oc.env:PROJECT_ROOT}/cdvae/common/colored_matrices.pkl
-        lattice_type: ptriclinic # pcubic, ptriclinic
+        lattice_type: pcubic # pcubic, ptriclinic
         onet_path: ${oc.env:PROJECT_ROOT}/data/perov_5/test_rep.pkl
 
   num_workers:
@@ -71,6 +77,6 @@ datamodule:
     test: 0
 
   batch_size:
-    train: 512
-    val: 256
-    test: 256
+    train: 128
+    val: 64
+    test: 64

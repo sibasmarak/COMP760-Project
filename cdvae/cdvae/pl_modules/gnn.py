@@ -45,9 +45,7 @@ class EmbeddingBlockColor(EmbeddingBlock):
 
     def forward(self, x: Tensor, rbf: Tensor, i: Tensor, j: Tensor, color: Any) -> Tensor:
         x = self.emb(x)
-        print(x.device, rbf.device)
         rbf = self.act(self.lin_rbf(rbf))
-        print('DEBUG: act done')
         color_layers = self.all_lin[color.detach().cpu().numpy().astype(int)]
         x_edge = torch.cat([x[i], x[j], rbf], dim = 1)
         outputs = [color_layers[k].to(device = torch.device('cuda'))(x_edge[k]) for k in range(i.shape[0])]
@@ -668,28 +666,30 @@ class DimeNetPlusPlusWrapColor(DimeNetPlusPlusWrap):
         sbf = self.sbf(dist, angle, idx_kj)
         ###
         # Embedding block.
-        print('DEBUG: rbf, sbf')
-        print('DEBUG: cm', data.color_matrix)
-        print('DEBUG: i', i)
-        print('DEBUG: j', j)
+        # breakpoint()
+        # print('DEBUG: rbf, sbf')
+        # print('DEBUG: cm', data.color_matrix)
+        # print('DEBUG: i', i)
+        # print('DEBUG: j', j)
 
-        print('DEBUG: cm-shape', data.color_matrix.shape)
-        print('DEBUG: cm-i-j shape', data.color_matrix[i, j].shape)
-        print('DEBUG: cm-i-j', data.color_matrix[i, j])
 
-        x = self.emb(data.atom_types.long(), rbf, i, j, data.color_matrix[i, j]) 
-        print('DEBUG: Embedding Block Done', x.shape)
+        # print('DEBUG: cm-shape', data.color_matrix.shape)
+        # print('DEBUG: cm-i-j shape', data.color_matrix[i, j].shape)
+        # print('DEBUG: cm-i-j', data.color_matrix[i % 40, j])
+
+        x = self.emb(data.atom_types.long(), rbf, i, j, data.color_matrix[i % 40, j % 40]) # FIXIT: modulo with num_atoms 
+        # print('DEBUG: Embedding Block Done', x.shape)
         P = self.output_blocks[0](x, rbf, i, num_nodes=pos.size(0))
-        print('DEBUG: Output Block Done', P.shape)
+        # print('DEBUG: Output Block Done', P.shape)
 
         # Interaction blocks.
         for interaction_block, output_block in zip(
             self.interaction_blocks, self.output_blocks[1:]
         ):
-            x = interaction_block(x, rbf, sbf, idx_kj, idx_ji, data.color_matrix[i,j])
-            print('DEBUG: Interaction Block Done', x.shape)
+            x = interaction_block(x, rbf, sbf, idx_kj, idx_ji, data.color_matrix[i % 40,j % 40])
+            # print('DEBUG: Interaction Block Done', x.shape)
             P += output_block(x, rbf, i, num_nodes=pos.size(0))
-            print('DEBUG: Output Block Done', x.shape)
+            # print('DEBUG: Output Block Done', x.shape)
         # Use mean
         if batch is None:
             if self.readout == 'mean':
