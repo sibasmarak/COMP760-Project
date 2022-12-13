@@ -82,13 +82,12 @@ def run(cfg: DictConfig) -> None:
 
     # Hydra run directory
     hydra_dir = Path(HydraConfig.get().run.dir)
-
     # Instantiate datamodule
     hydra.utils.log.info(f"Instantiating <{cfg.data.datamodule._target_}>")
+    print(hydra_dir)
     datamodule: pl.LightningDataModule = hydra.utils.instantiate(
         cfg.data.datamodule, _recursive_=False
     )
-
     # Instantiate model
     hydra.utils.log.info(f"Instantiating <{cfg.model._target_}>")
     model: pl.LightningModule = hydra.utils.instantiate(
@@ -144,7 +143,7 @@ def run(cfg: DictConfig) -> None:
         callbacks=callbacks,
         deterministic=cfg.train.deterministic,
         check_val_every_n_epoch=cfg.logging.val_check_interval,
-        # progress_bar_refresh_rate=cfg.logging.progress_bar_refresh_rate,
+#        progress_bar_refresh_rate=cfg.logging.progress_bar_refresh_rate,  #Commented this line
         resume_from_checkpoint=ckpt,
         **cfg.train.pl_trainer,
     )
