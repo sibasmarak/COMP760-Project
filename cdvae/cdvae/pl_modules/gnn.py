@@ -32,6 +32,13 @@ try:
 except ImportError:
     sym = None
 
+
+class ResidualLayerFull(ResidualLayer):
+    def __init__(self):
+        pass
+    def forward(self):
+        pass
+
 class EmbeddingBlockColor(EmbeddingBlock):
     def __init__(self, num_radial: int, hidden_channels: int, act: Callable, colors: List[int]):
         super().__init__(
@@ -41,15 +48,35 @@ class EmbeddingBlockColor(EmbeddingBlock):
         )
         # self.all_lin = torch.stack([Linear(3 * hidden_channels, hidden_channels) for i in  range(len(colors))], dim = 0)
         # self.all_lin = np.array([Linear(3 * hidden_channels, hidden_channels) for i in  range(len(colors))])
-        self.all_lin = np.array([Linear(3 * hidden_channels, hidden_channels) for i in  range(len(colors))])
+         ### Added Line
+        # self.all_lin = torch.nn.ModuleList([Linear(3 * hidden_channels, hidden_channels).to(device = torch.device('cuda')) for i in  range(len(colors))])
+        self.all_lin = Linear(3 * hidden_channels, hidden_channels * len(colors)) 
+        self.hidden_channels = hidden_channels
+        self.colors = colors
 
     def forward(self, x: Tensor, rbf: Tensor, i: Tensor, j: Tensor, color: Any) -> Tensor:
         x = self.emb(x)
         rbf = self.act(self.lin_rbf(rbf))
-        color_layers = self.all_lin[color.detach().cpu().numpy().astype(int)]
+        # color_layers = self.all_lin[color.detach().cpu().numpy().astype(int)] # i in color.long()
+         ### Added Line
+        # color_layers = [self.all_lin[i] for i in color.long()]
         x_edge = torch.cat([x[i], x[j], rbf], dim = 1)
-        outputs = [color_layers[k].to(device = torch.device('cuda'))(x_edge[k]) for k in range(i.shape[0])]
-        return self.act(torch.stack(outputs)) ##Check dimnensions
+        # outputs = [color_layers[k].to(device = torch.device('cuda'))(x_edge[k]) for k in range(i.shape[0])]
+        # print('Dim dim: ', x_edge.shape,  self.all_lin(x_edge).shape, torch.nn.functional.one_hot(color.to(torch.int64)).shape, torch.repeat_interleave(torch.nn.functional.one_hot(color.to(torch.int64)), self.hidden_channels, dim = 1).shape)
+        # breakpoint()
+        tmp = torch.nn.functional.one_hot(color.to(torch.int64), num_classes = len(self.colors))
+        # print(tmp)
+        # print(tmp.shape)
+        # print(self.all_lin(x_edge).shape)
+        # print(tmp * self.all_lin(x_edge))
+        # breakpoint()
+        tmp = torch.repeat_interleave(tmp, self.hidden_channels, dim = 1)
+        outputs = self.all_lin(x_edge) * tmp
+        outputs = outputs[torch.where(tmp)].reshape((x_edge.shape[0], self.hidden_channels))
+        return outputs
+         ### Added Line
+        # outputs = [color_layers[k](x_edge[k]) for k in range(i.shape[0])]
+        # return self.act(torch.stack(outputs)) ##Check dimnensions
 
 ###### Rewrote BesselBasisLayer
 class BesselBasisLayer(torch.nn.Module):
@@ -194,19 +221,50 @@ class InteractionPPBlockColor(InteractionPPBlock):
         self.colors = list(range(num_colors))
         assert len(self.colors) > 0, 'Please provide coloring pattern'
 
-        self.all_layers_before_skip = np.array([torch.nn.Sequential(  ##Changed ModuleList to Sequential
+        # self.all_layers_before_skip = np.array([torch.nn.Sequential(  ##Changed ModuleList to Sequential
+        #     *[
+        #         ResidualLayer(hidden_channels, act)
+        #         for _ in range(num_before_skip)
+        #     ]
+        # ) for i in range(len(self.colors))])
+        # self.all_lin = np.array([nn.Linear(hidden_channels, hidden_channels) for i in range(len(self.colors))])
+        # self.all_layers_after_skip = np.array([torch.nn.Sequential(  ##Changed ModuleList to Sequential
+        #     *[
+        #         ResidualLayer(hidden_channels, act)
+        #         for _ in range(num_after_skip)
+        #     ]
+        # ) for i in range(len(self.colors))])
+
+        ### Added Lines
+        # self.all_layers_before_skip = torch.nn.ModuleList([torch.nn.Sequential(  ##Changed ModuleList to Sequential
+        #     *[
+        #         ResidualLayer(hidden_channels, act)
+        #         for _ in range(num_before_skip)
+        #     ]
+        # ).to(device = torch.device('cuda')) for i in range(len(self.colors))])
+        # self.all_lin = torch.nn.ModuleList([nn.Linear(hidden_channels, hidden_channels).to(device = torch.device('cuda')) for i in range(len(self.colors))])
+        # self.all_layers_after_skip = torch.nn.ModuleList([torch.nn.Sequential(  ##Changed ModuleList to Sequential
+        #     *[
+        #         ResidualLayer(hidden_channels, act)
+        #         for _ in range(num_after_skip)
+        #     ]
+        # ).to(device = torch.device('cuda')) for i in range(len(self.colors))])
+
+        self.all_layers_before_skip = torch.nn.Sequential(  ##Changed ModuleList to Sequential
             *[
-                ResidualLayer(hidden_channels, act)
+                ResidualLayer(hidden_channels * len(self.colors), act)
                 for _ in range(num_before_skip)
             ]
-        ) for i in range(len(self.colors))])
-        self.all_lin = np.array([nn.Linear(hidden_channels, hidden_channels) for i in range(len(self.colors))])
-        self.all_layers_after_skip = np.array([torch.nn.Sequential(  ##Changed ModuleList to Sequential
+            )
+        self.all_lin = Linear(hidden_channels * len(self.colors), hidden_channels * len(self.colors)) 
+        self.all_layers_after_skip = torch.nn.Sequential(  ##Changed ModuleList to Sequential
             *[
-                ResidualLayer(hidden_channels, act)
+                ResidualLayer(hidden_channels * len(self.colors), act)
                 for _ in range(num_after_skip)
             ]
-        ) for i in range(len(self.colors))])
+        ) 
+        self.hidden_channels = hidden_channels
+        
     def forward(self, x, rbf, sbf, idx_kj, idx_ji, color):
 
         # Initial transformations.
@@ -230,21 +288,42 @@ class InteractionPPBlockColor(InteractionPPBlock):
         x_kj = scatter(x_kj, idx_ji, dim=0, dim_size=x.size(0))
         x_kj = self.act(self.lin_up(x_kj))
 
-        h = x_ji + x_kj
-        color_layers_before_skip = self.all_layers_before_skip[color.detach().cpu().numpy().astype(int)][:,0]
-        outputs_before_skip = [color_layers_before_skip[k].to(device = torch.device('cuda'))(h[k]) for k in range(h.shape[0])]
-        h = torch.stack(outputs_before_skip)
+        h = x_ji + x_kj  # x 128
+        h = h.repeat(1, len(self.colors)) # x1024
+
+        oh = torch.nn.functional.one_hot(color.to(torch.int64), num_classes = len(self.colors)) # x 8
+        tmp = torch.repeat_interleave(oh, self.hidden_channels, dim = 1) # x 1024
+        color_layers_before_skip = self.all_layers_before_skip(h)
+        outputs_before_skip = color_layers_before_skip * tmp
+        h = outputs_before_skip[torch.where(tmp)].reshape((h.shape[0], self.hidden_channels)) # x 128
         # for layer in self.layers_before_skip:
         #     h = layer(h)
-        color_linear = self.all_lin[color.detach().cpu().numpy().astype(int)]
-        outputs_linear = [color_linear[k].to(device = torch.device('cuda'))(h[k]) for k in range(h.shape[0])]
-        h = self.act(torch.stack(outputs_linear)) + x
+        h = h.repeat(1, len(self.colors)) 
+        color_linear = self.all_lin(h)
+        outputs_linear = color_linear * tmp
+        h = outputs_linear[torch.where(tmp)].reshape((h.shape[0], self.hidden_channels)) + x
         # h = self.act(self.lin(h)) + x
-        color_layers_after_skip = self.all_layers_after_skip[color.detach().cpu().numpy().astype(int)][:,0]
-        outputs_after_skip = [color_layers_after_skip[k].to(device = torch.device('cuda'))(h[k]) for k in range(h.shape[0])]
-        h = torch.stack(outputs_after_skip)
-        # for layer in self.layers_after_skip:
-        #     h = layer(h)
+        h = h.repeat(1, len(self.colors))
+        color_layers_after_skip = self.all_layers_after_skip(h)
+        outputs_after_skip = color_layers_after_skip * tmp
+        h = outputs_before_skip[torch.where(tmp)].reshape((h.shape[0], self.hidden_channels))
+        ## for layer in self.layers_after_skip:
+        ##     h = layer(h)
+        ## Added lines
+        # color_layers_before_skip = [self.all_layers_before_skip[i] for i in color.long()]
+        # outputs_before_skip = [color_layers_before_skip[k](h[k]) for k in range(h.shape[0])]
+        # h = torch.stack(outputs_before_skip)
+        # # for layer in self.layers_before_skip:
+        # #     h = layer(h)
+        # color_linear = [self.all_lin[i] for i in color.long()]
+        # outputs_linear = [color_linear[k](h[k]) for k in range(h.shape[0])]
+        # h = self.act(torch.stack(outputs_linear)) + x
+        # # h = self.act(self.lin(h)) + x
+        # color_layers_after_skip = [self.all_layers_after_skip[i] for i in color.long()]
+        # outputs_after_skip = [color_layers_after_skip[k](h[k]) for k in range(h.shape[0])]
+        # h = torch.stack(outputs_after_skip)
+        # # for layer in self.layers_after_skip:
+        # #     h = layer(h)
 
         return h
 
@@ -676,7 +755,6 @@ class DimeNetPlusPlusWrapColor(DimeNetPlusPlusWrap):
         # print('DEBUG: cm-shape', data.color_matrix.shape)
         # print('DEBUG: cm-i-j shape', data.color_matrix[i, j].shape)
         # print('DEBUG: cm-i-j', data.color_matrix[i % 40, j])
-
         x = self.emb(data.atom_types.long(), rbf, i, j, data.color_matrix[i % 40, j % 40]) # FIXIT: modulo with num_atoms 
         # print('DEBUG: Embedding Block Done', x.shape)
         P = self.output_blocks[0](x, rbf, i, num_nodes=pos.size(0))

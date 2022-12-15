@@ -1,6 +1,7 @@
 import torch, pickle
+import numpy as np
 
-from constants import Ptriclinic_generator, Cubic_generator
+from constants import Ptriclinic_generator, Cubic_generator, Ptriclinic_generator_full ## Changed
 
 def create_colored_matrix(input_generators, output_generators):
     assert len(input_generators) == len(output_generators)
@@ -36,7 +37,7 @@ def create_colored_matrix(input_generators, output_generators):
     return colors
 
 colored_matrices = {}
-generators = {'ptriclinic': Ptriclinic_generator, 'pcubic': Cubic_generator}
+generators = {'ptriclinic': Ptriclinic_generator_full, 'pcubic': Cubic_generator}
 
 for key, gen in generators.items():
     colored_matrix_dict = create_colored_matrix(gen, gen)
@@ -48,7 +49,12 @@ for key, gen in generators.items():
     for k, v in colored_matrix_dict.items():
         colored_matrix[k] = int(v)
 
-    colored_matrices[key] = colored_matrix
+    if key == 'ptriclinic': 
+        # replicate to get 40x40 matrix
+        colored_matrix = torch.cat([colored_matrix] * 5, dim=0)
+        colored_matrix = torch.cat([colored_matrix] * 5, dim=1)
+        colored_matrices[key] = colored_matrix
+        assert colored_matrix.shape == (40, 40)
 
 pickle.dump(colored_matrices, open('colored_matrices.pkl', 'wb'))
 
