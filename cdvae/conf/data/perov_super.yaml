@@ -15,7 +15,7 @@ eval_model_name: perovskite
 
 
 train_max_epochs: 3000
-early_stopping_patience: 60 #100000
+early_stopping_patience: 60 # 100000
 teacher_forcing_max_epoch: 1500
 
 

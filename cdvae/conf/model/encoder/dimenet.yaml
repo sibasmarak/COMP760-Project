@@ -15,5 +15,6 @@ envelope_exponent: 5
 num_before_skip: 1
 num_after_skip: 2
 num_output_layers: 3
-num_colors: 8 #256 # 383 for pcubic; 256 for ptriclinic
+num_colors: 8 # 383 for pcubic; 256 for ptriclinic
+max_atoms: ${data.max_atoms}
 readout: ${data.readout}

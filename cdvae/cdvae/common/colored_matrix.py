@@ -1,7 +1,7 @@
 import torch, pickle
 import numpy as np
 
-from constants import Ptriclinic_generator, Cubic_generator, Ptriclinic_generator_full ## Changed
+from constants import Cubic_generator, Ptriclinic_generator
 
 def create_colored_matrix(input_generators, output_generators):
     assert len(input_generators) == len(output_generators)
@@ -37,7 +37,7 @@ def create_colored_matrix(input_generators, output_generators):
     return colors
 
 colored_matrices = {}
-generators = {'ptriclinic': Ptriclinic_generator_full, 'pcubic': Cubic_generator}
+generators = {'ptriclinic': Ptriclinic_generator, 'pcubic': Cubic_generator}
 
 for key, gen in generators.items():
     colored_matrix_dict = create_colored_matrix(gen, gen)
