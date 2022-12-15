@@ -44,6 +44,7 @@ class EmbeddingBlockColor(EmbeddingBlock):
         self.all_lin = np.array([Linear(3 * hidden_channels, hidden_channels) for i in  range(len(colors))])
 
     def forward(self, x: Tensor, rbf: Tensor, i: Tensor, j: Tensor, color: Any) -> Tensor:
+        color = torch.zeros_like(color) ## REMOVE THIS
         x = self.emb(x)
         rbf = self.act(self.lin_rbf(rbf))
         color_layers = self.all_lin[color.detach().cpu().numpy().astype(int)]
@@ -209,6 +210,8 @@ class InteractionPPBlockColor(InteractionPPBlock):
         ) for i in range(len(self.colors))])
     def forward(self, x, rbf, sbf, idx_kj, idx_ji, color):
 
+        color = torch.zeros_like(color) ## REMOVE THIS
+        
         # Initial transformations.
         x_ji = self.act(self.lin_ji(x))
         x_kj = self.act(self.lin_kj(x))
@@ -566,7 +569,7 @@ class DimeNetPlusPlusWrapColor(DimeNetPlusPlusWrap):
         num_after_skip=2,
         num_output_layers=3,
         readout='mean',
-        num_colors=256, # 1023 for ptriclinic and 383 for pcubic
+        num_colors=8, # 1023 for ptriclinic and 383 for pcubic
         act = swish
     ):
         self.num_targets = num_targets
@@ -592,6 +595,7 @@ class DimeNetPlusPlusWrapColor(DimeNetPlusPlusWrap):
             num_output_layers=num_output_layers,
         )
         self.act = act
+        print('Num_colors ', num_colors)
         self.colors = list(range(num_colors))
         assert len(self.colors) > 0, 'Please provide coloring pattern'
         self.emb = EmbeddingBlockColor(num_radial, hidden_channels, self.act, self.colors) ##Define colors in model.py

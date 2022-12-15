@@ -48,6 +48,13 @@ for key, gen in generators.items():
     for k, v in colored_matrix_dict.items():
         colored_matrix[k] = int(v)
 
+    if key == 'ptriclinic':
+        # replicate to get 40x40 matrix
+        colored_matrix = torch.cat([colored_matrix] * 5, dim=0)
+        colored_matrix = torch.cat([colored_matrix] * 5, dim=1)
+
+        assert colored_matrix.shape == (40, 40)
+
     colored_matrices[key] = colored_matrix
 
 pickle.dump(colored_matrices, open('colored_matrices.pkl', 'wb'))

@@ -40,7 +40,7 @@ datamodule:
       lattice_scale_method: ${data.lattice_scale_method}
       preprocess_workers: ${data.preprocess_workers}
       color_matrix_path: ${oc.env:PROJECT_ROOT}/cdvae/common/colored_matrices.pkl
-      lattice_type: pcubic # pcubic, ptriclinic
+      lattice_type: ptriclinic # pcubic, ptriclinic
       onet_path: ${oc.env:PROJECT_ROOT}/data/perov_5/train_rep.pkl
 
     val:
@@ -54,7 +54,7 @@ datamodule:
         lattice_scale_method: ${data.lattice_scale_method}
         preprocess_workers: ${data.preprocess_workers}
         color_matrix_path: ${oc.env:PROJECT_ROOT}/cdvae/common/colored_matrices.pkl
-        lattice_type: pcubic # pcubic, ptriclinic
+        lattice_type: ptriclinic # pcubic, ptriclinic
         onet_path: ${oc.env:PROJECT_ROOT}/data/perov_5/val_rep.pkl
 
     test:
@@ -68,7 +68,7 @@ datamodule:
         lattice_scale_method: ${data.lattice_scale_method}
         preprocess_workers: ${data.preprocess_workers}
         color_matrix_path: ${oc.env:PROJECT_ROOT}/cdvae/common/colored_matrices.pkl
-        lattice_type: pcubic # pcubic, ptriclinic
+        lattice_type: ptriclinic # pcubic, ptriclinic
         onet_path: ${oc.env:PROJECT_ROOT}/data/perov_5/test_rep.pkl
 
   num_workers:
