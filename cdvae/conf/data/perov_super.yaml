@@ -15,7 +15,7 @@ eval_model_name: perovskite
 
 
 train_max_epochs: 3000
-early_stopping_patience: 100000
+early_stopping_patience: 60 #100000
 teacher_forcing_max_epoch: 1500
 
 
@@ -71,7 +71,7 @@ datamodule:
         lattice_type: ptriclinic # pcubic, ptriclinic
         onet_path: ${oc.env:PROJECT_ROOT}/data/perov_5/test_rep.pkl
 
-  num_workers:
+  num_workers:  ##CHANGED THIS
     train: 0
     val: 0
     test: 0
