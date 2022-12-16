@@ -306,6 +306,8 @@ def main(args):
         recon_metrics = rec_evaluator.get_metrics()
         all_metrics.update(recon_metrics)
 
+    print(all_metrics)
+
     if 'gen' in args.tasks:
         gen_file_path = get_file_paths(args.root_path, 'gen', args.label)
         recon_file_path = get_file_paths(args.root_path, 'recon', args.label)
@@ -320,6 +322,8 @@ def main(args):
             gen_crys, gt_crys, eval_model_name=eval_model_name)
         gen_metrics = gen_evaluator.get_metrics()
         all_metrics.update(gen_metrics)
+    
+    print(all_metrics)
 
     if 'opt' in args.tasks:
         opt_file_path = get_file_paths(args.root_path, 'opt', args.label)
