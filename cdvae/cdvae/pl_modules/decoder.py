@@ -13,7 +13,8 @@ def build_mlp(in_dim, hidden_dim, fc_num_layers, out_dim):
     mods += [nn.Linear(hidden_dim, out_dim)]
     return nn.Sequential(*mods)
 
-
+# torch-sparse 0.6.15
+# torchmetrics 0.10.1
 class GemNetTDecoder(nn.Module):
     """Decoder with GemNetT."""
 

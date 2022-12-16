@@ -1,3 +1,4 @@
+import pickle
 import random
 from typing import Optional, Sequence
 from pathlib import Path
@@ -36,12 +37,14 @@ def worker_init_fn(id: int):
 class CrystDataModule(pl.LightningDataModule):
     def __init__(
         self,
+        load_data: DictConfig,
         datasets: DictConfig,
         num_workers: DictConfig,
         batch_size: DictConfig,
         scaler_path=None,
     ):
         super().__init__()
+        self.load_data = load_data
         self.datasets = datasets
         self.num_workers = num_workers
         self.batch_size = batch_size
@@ -59,7 +62,13 @@ class CrystDataModule(pl.LightningDataModule):
     def get_scaler(self, scaler_path):
         # Load once to compute property scaler
         if scaler_path is None:
-            train_dataset = hydra.utils.instantiate(self.datasets.train)
+            if self.load_data.preprocessed:
+                train_dataset = torch.load(self.load_data.preprocessed_train)
+                train_dataset.color_matrix = pickle.load(open(self.datasets.train.color_matrix_path, 'rb'))
+                train_dataset.onet_data = pickle.load(open(self.datasets.train.onet_path, 'rb'))
+            else:
+                train_dataset = hydra.utils.instantiate(self.datasets.train)
+            
             self.lattice_scaler = get_scaler_from_data_list(
                 train_dataset.cached_data,
                 key='scaled_lattice')
@@ -76,27 +85,47 @@ class CrystDataModule(pl.LightningDataModule):
         construct datasets and assign data scalers.
         """
         if stage is None or stage == "fit":
-            self.train_dataset = hydra.utils.instantiate(self.datasets.train)
-            self.val_datasets = [
-                hydra.utils.instantiate(dataset_cfg)
-                for dataset_cfg in self.datasets.val
-            ]
+            if self.load_data.preprocessed:
+                self.train_dataset = torch.load(self.load_data.preprocessed_train)
+                self.train_dataset.color_matrix = pickle.load(open(self.datasets.train.color_matrix_path, 'rb'))
+                self.train_dataset.onet_data = pickle.load(open(self.datasets.train.onet_path, 'rb'))
+                self.train_dataset.lattice_type = self.datasets.train.lattice_type
+            
+                self.val_datasets = [torch.load(self.load_data.preprocessed_val)]
+                for i in range(len(self.val_datasets)):
+                    self.val_datasets[i].color_matrix = pickle.load(open(self.datasets.val[i].color_matrix_path, 'rb'))
+                    self.val_datasets[i].onet_data = pickle.load(open(self.datasets.val[i].onet_path, 'rb'))
+                    self.val_datasets[i].lattice_type = self.datasets.val[i].lattice_type
+            else:
+                self.train_dataset = hydra.utils.instantiate(self.datasets.train)
+                self.val_datasets = [
+                    hydra.utils.instantiate(dataset_cfg)
+                    for dataset_cfg in self.datasets.val
+                ]
 
             self.train_dataset.lattice_scaler = self.lattice_scaler
             self.train_dataset.scaler = self.scaler
             for val_dataset in self.val_datasets:
                 val_dataset.lattice_scaler = self.lattice_scaler
                 val_dataset.scaler = self.scaler
-
+            
         if stage is None or stage == "test":
-            self.test_datasets = [
-                hydra.utils.instantiate(dataset_cfg)
-                for dataset_cfg in self.datasets.test
-            ]
+            if self.load_data.preprocessed:
+                self.test_datasets = [torch.load(self.load_data.preprocessed_test)]
+                for i in range(len(self.test_datasets)):
+                    self.test_datasets[i].color_matrix = pickle.load(open(self.datasets.test[i].color_matrix_path, 'rb'))
+                    self.test_datasets[i].onet_data = pickle.load(open(self.datasets.test[i].onet_path, 'rb'))
+                    self.test_datasets[i].lattice_type = self.datasets.test[i].lattice_type
+            else:
+                self.test_datasets = [
+                    hydra.utils.instantiate(dataset_cfg)
+                    for dataset_cfg in self.datasets.test
+                ]
+            
             for test_dataset in self.test_datasets:
                 test_dataset.lattice_scaler = self.lattice_scaler
                 test_dataset.scaler = self.scaler
-
+            
     def train_dataloader(self) -> DataLoader:
         return DataLoader(
             self.train_dataset,

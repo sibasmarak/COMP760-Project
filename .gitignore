@@ -216,3 +216,18 @@ fabric.properties
 
 # .DS_Store
 .DS_Store
+
+
+*.zip
+*.tar.gz
+hydra/
+learn_materials-equivariant_model/
+*.pt
+*.pkl
+*slurm*out
+cdvae/cosine/
+cdvae/job_error.txt
+cdvae/mse
+cdvae/job_output.txt
+cdvae/job_script
+cdvae/runner.sh

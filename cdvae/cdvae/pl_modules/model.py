@@ -1,5 +1,5 @@
-from typing import Any, Dict
-
+from typing import Any, Dict, List
+import time
 import hydra
 import numpy as np
 import omegaconf
@@ -17,6 +17,8 @@ from cdvae.common.data_utils import (
 from cdvae.pl_modules.embeddings import MAX_ATOMIC_NUM
 from cdvae.pl_modules.embeddings import KHOT_EMBEDDINGS
 
+import os
+os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
 def build_mlp(in_dim, hidden_dim, fc_num_layers, out_dim):
     mods = [nn.Linear(in_dim, hidden_dim), nn.ReLU()]
@@ -41,6 +43,7 @@ class BaseModule(pl.LightningModule):
         scheduler = hydra.utils.instantiate(
             self.hparams.optim.lr_scheduler, optimizer=opt
         )
+
         return {"optimizer": opt, "lr_scheduler": scheduler, "monitor": "val_loss"}
 
 
@@ -136,7 +139,6 @@ class CrystGNN_Supervise(BaseModule):
 class CDVAE(BaseModule):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-
         self.encoder = hydra.utils.instantiate(
             self.hparams.encoder, num_targets=self.hparams.latent_dim)
         self.decoder = hydra.utils.instantiate(self.hparams.decoder)
@@ -363,6 +365,11 @@ class CDVAE(BaseModule):
 
         kld_loss = self.kld_loss(mu, log_var)
 
+        kd_loss = 0
+        if not self.hparams.kd_type == False:
+            kd_targets = batch.onet_rep #.reshape(z.shape[0], z.shape[1])
+            kd_loss = self.kd_loss(z, kd_targets)
+
         if self.hparams.predict_property:
             property_loss = self.property_loss(z, batch)
         else:
@@ -375,6 +382,7 @@ class CDVAE(BaseModule):
             'coord_loss': coord_loss,
             'type_loss': type_loss,
             'kld_loss': kld_loss,
+            'kd_loss': kd_loss,
             'property_loss': property_loss,
             'pred_num_atoms': pred_num_atoms,
             'pred_lengths_and_angles': pred_lengths_and_angles,
@@ -467,6 +475,38 @@ class CDVAE(BaseModule):
     def num_atom_loss(self, pred_num_atoms, batch):
         return F.cross_entropy(pred_num_atoms, batch.num_atoms)
 
+    def kd_loss(self, z, onet_rep):
+        # knowledge distillation loss
+
+        if self.hparams.kd_type == 'cosine':
+            z = F.normalize(z, dim=-1)
+            onet_rep = F.normalize(onet_rep, dim=-1)
+            sim = torch.sum(z * onet_rep) / z.size(0)
+            return sim
+
+        if self.hparams.kd_type == 'mse':
+            return F.mse_loss(z, onet_rep)
+        
+        if self.hparams.kd_type == 'l1':
+            return F.l1_loss(z, onet_rep)
+
+        if self.hparams.kd_type == 'tanh':
+            z = F.normalize(z, dim=-1)
+            onet_rep = F.normalize(onet_rep, dim=-1)
+            sim = torch.sum(z * onet_rep) / z.size(0)
+            tanh_sim = F.tanh(sim + 1)
+            return tanh_sim
+
+        
+        # do not use these two
+        if self.hparams.kd_type == 'kl_loss': 
+            kl_loss = nn.KLDivLoss(reduction="batchmean")  ##Check if it should be batchmean or mean?
+            return kl_loss(z, onet_rep).mean()
+        
+        if self.hparams.kd_type == 'js_loss':   
+            kl_loss = nn.KLDivLoss(reduction="batchmean")  ## Verify this 
+            return 0.5 * (kl_loss(z, (onet_rep + z) / 2. ) + kl_loss(onet_rep, (onet_rep + z) / 2. ))
+        
     def property_loss(self, z, batch):
         return F.mse_loss(self.fc_property(z), batch.y)
 
@@ -538,13 +578,19 @@ class CDVAE(BaseModule):
     def validation_step(self, batch: Any, batch_idx: int) -> torch.Tensor:
         outputs = self(batch, teacher_forcing=False, training=False)
         log_dict, loss = self.compute_stats(batch, outputs, prefix='val')
+        
         self.log_dict(
             log_dict,
             on_step=False,
             on_epoch=True,
             prog_bar=True,
         )
+
         return loss
+
+    # def validation_epoch_end(self, outputs: List[Any]) -> None:
+    #     print('----- Returning from validation_end() -----')
+    #     return
 
     def test_step(self, batch: Any, batch_idx: int) -> torch.Tensor:
         outputs = self(batch, teacher_forcing=False, training=False)
@@ -560,6 +606,7 @@ class CDVAE(BaseModule):
         coord_loss = outputs['coord_loss']
         type_loss = outputs['type_loss']
         kld_loss = outputs['kld_loss']
+        kd_loss = outputs['kd_loss']
         composition_loss = outputs['composition_loss']
         property_loss = outputs['property_loss']
 
@@ -570,7 +617,8 @@ class CDVAE(BaseModule):
             self.hparams.cost_type * type_loss +
             self.hparams.beta * kld_loss +
             self.hparams.cost_composition * composition_loss +
-            self.hparams.cost_property * property_loss)
+            self.hparams.cost_property * property_loss +
+            self.hparams.cost_kd * kd_loss)
 
         log_dict = {
             f'{prefix}_loss': loss,
@@ -580,6 +628,7 @@ class CDVAE(BaseModule):
             f'{prefix}_type_loss': type_loss,
             f'{prefix}_kld_loss': kld_loss,
             f'{prefix}_composition_loss': composition_loss,
+            f'{prefix}_kd_loss': kd_loss,
         }
 
         if prefix != 'train':
@@ -628,7 +677,7 @@ class CDVAE(BaseModule):
                 f'{prefix}_volumes_mard': volumes_mard,
                 f'{prefix}_type_accuracy': type_accuracy,
             })
-
+            
         return log_dict, loss
 
 

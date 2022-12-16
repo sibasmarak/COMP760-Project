@@ -1,6 +1,6 @@
 _target_: cdvae.pl_modules.model.CDVAE
-hidden_dim: 256
-latent_dim: 256
+hidden_dim: 128
+latent_dim: 128
 fc_num_layers: 1
 max_atoms: ${data.max_atoms}
 cost_natom: 1.
@@ -9,7 +9,9 @@ cost_type: 1.
 cost_lattice: 10.
 cost_composition: 1.
 cost_edge: 10.
+cost_kd: 1.
 cost_property: 1.
+kd_type: False
 beta: 0.01
 teacher_forcing_lattice: true
 teacher_forcing_max_epoch: ${data.teacher_forcing_max_epoch}

@@ -30,7 +30,6 @@ def get_env(env_name: str, default: Optional[str] = None) -> str:
                 f"{env_name} has yet to be configured and no default value is present!"
             )
         return default
-
     return env_value
 
 

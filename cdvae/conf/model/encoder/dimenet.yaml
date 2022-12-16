@@ -1,4 +1,5 @@
-_target_: cdvae.pl_modules.gnn.DimeNetPlusPlusWrap
+# _target_: cdvae.pl_modules.gnn.DimeNetPlusPlusWrap
+_target_: cdvae.pl_modules.gnn.DimeNetPlusPlusWrapColor
 num_targets: ${data.num_targets}
 hidden_channels: 128
 num_blocks: 4
@@ -14,4 +15,6 @@ envelope_exponent: 5
 num_before_skip: 1
 num_after_skip: 2
 num_output_layers: 3
+num_colors: 8 # 383 for pcubic; 256 for ptriclinic
+max_atoms: ${data.max_atoms}
 readout: ${data.readout}

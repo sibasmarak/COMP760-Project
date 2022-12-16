@@ -1,0 +1,82 @@
+root_path: ${oc.env:PROJECT_ROOT}/data/perov_super
+prop: heat_ref
+num_targets: 1
+# prop: scaled_lattice
+# num_targets: 6
+niggli: true
+primitive: false
+graph_method: crystalnn
+lattice_scale_method: scale_length
+preprocess_workers: 30
+readout: mean
+max_atoms: 40
+otf_graph: false
+eval_model_name: perovskite
+
+
+train_max_epochs: 3000
+early_stopping_patience: 60 # 100000
+teacher_forcing_max_epoch: 1500
+
+
+datamodule:
+  _target_: cdvae.pl_data.datamodule.CrystDataModule
+  
+  load_data: 
+    preprocessed: True
+    preprocessed_train: ${data.root_path}/train_super.pt
+    preprocessed_val: ${data.root_path}/val_super.pt
+    preprocessed_test: ${data.root_path}/test_super.pt
+
+  datasets:
+    train:
+      _target_: cdvae.pl_data.dataset.CrystDataset
+      name: Formation energy train
+      path: ${data.root_path}/train.csv
+      prop: ${data.prop}
+      niggli: ${data.niggli}
+      primitive: ${data.primitive}
+      graph_method: ${data.graph_method}
+      lattice_scale_method: ${data.lattice_scale_method}
+      preprocess_workers: ${data.preprocess_workers}
+      color_matrix_path: ${oc.env:PROJECT_ROOT}/cdvae/common/colored_matrices.pkl
+      lattice_type: ptriclinic # pcubic, ptriclinic
+      onet_path: ${oc.env:PROJECT_ROOT}/data/perov_5/train_rep.pkl
+
+    val:
+      - _target_: cdvae.pl_data.dataset.CrystDataset
+        name: Formation energy val
+        path: ${data.root_path}/val.csv
+        prop: ${data.prop}
+        niggli: ${data.niggli}
+        primitive: ${data.primitive}
+        graph_method: ${data.graph_method}
+        lattice_scale_method: ${data.lattice_scale_method}
+        preprocess_workers: ${data.preprocess_workers}
+        color_matrix_path: ${oc.env:PROJECT_ROOT}/cdvae/common/colored_matrices.pkl
+        lattice_type: ptriclinic # pcubic, ptriclinic
+        onet_path: ${oc.env:PROJECT_ROOT}/data/perov_5/val_rep.pkl
+
+    test:
+      - _target_: cdvae.pl_data.dataset.CrystDataset
+        name: Formation energy test
+        path: ${data.root_path}/test.csv
+        prop: ${data.prop}
+        niggli: ${data.niggli}
+        primitive: ${data.primitive}
+        graph_method: ${data.graph_method}
+        lattice_scale_method: ${data.lattice_scale_method}
+        preprocess_workers: ${data.preprocess_workers}
+        color_matrix_path: ${oc.env:PROJECT_ROOT}/cdvae/common/colored_matrices.pkl
+        lattice_type: ptriclinic # pcubic, ptriclinic
+        onet_path: ${oc.env:PROJECT_ROOT}/data/perov_5/test_rep.pkl
+
+  num_workers:  ##CHANGED THIS
+    train: 0
+    val: 0
+    test: 0
+
+  batch_size:
+    train: 128
+    val: 64
+    test: 64
