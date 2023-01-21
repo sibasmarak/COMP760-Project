@@ -105,9 +105,12 @@ class CrystDataModule(pl.LightningDataModule):
 
             self.train_dataset.lattice_scaler = self.lattice_scaler
             self.train_dataset.scaler = self.scaler
+            torch.save(self.train_dataset, '/home/mila/p/prashant.govindarajan/scratch/COMP760-Project/cdvae/data/mp_bravais/train.pt')
             for val_dataset in self.val_datasets:
                 val_dataset.lattice_scaler = self.lattice_scaler
                 val_dataset.scaler = self.scaler
+            torch.save(self.val_datasets, '/home/mila/p/prashant.govindarajan/scratch/COMP760-Project/cdvae/data/mp_bravais/val.pt')
+            
             
         if stage is None or stage == "test":
             if self.load_data.preprocessed:
@@ -125,6 +128,9 @@ class CrystDataModule(pl.LightningDataModule):
             for test_dataset in self.test_datasets:
                 test_dataset.lattice_scaler = self.lattice_scaler
                 test_dataset.scaler = self.scaler
+        ## saving test data ###$
+        torch.save(self.test_datasets, '/home/mila/p/prashant.govindarajan/scratch/COMP760-Project/cdvae/data/mp_bravais/test.pt')
+        
             
     def train_dataloader(self) -> DataLoader:
         return DataLoader(

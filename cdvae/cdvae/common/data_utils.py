@@ -51,6 +51,8 @@ OFFSET_LIST = [
     [1, 1, 1],
 ]
 
+BRAVAIS_IND = {'orthorhombic-F': 0, 'cubic-I': 1, 'orthorhombic-P': 2, 'hexagonal-P': 3, 'orthorhombic-I': 4, 'trigonal-P': 5, 'tetragonal-I': 6, 'tetragonal-P': 7, 'triclinic-P': 8, 'monoclinic-P': 9, 'cubic-P': 10, 'orthorhombic-C': 11, 'monoclinic-C': 12, 'cubic-F': 13}
+
 EPSILON = 1e-5
 
 chemical_symbols = [
@@ -653,6 +655,7 @@ def preprocess(input_file, num_workers, niggli, primitive, graph_method,
 
     def process_one(row, niggli, primitive, graph_method, prop_list, onet_data):
         crystal_str = row['cif']
+        bravais = row['bravais'] ##Added this##
         crystal = build_crystal(
             crystal_str, niggli=niggli, primitive=primitive)
         graph_arrays = build_crystal_graph(crystal, graph_method)
@@ -662,6 +665,7 @@ def preprocess(input_file, num_workers, niggli, primitive, graph_method,
             'cif': crystal_str,
             'onet_rep': onet_data,
             'graph_arrays': graph_arrays,
+            'bravais': BRAVAIS_IND[bravais],
         }
         result_dict.update(properties)
         return result_dict
@@ -711,7 +715,7 @@ def preprocess_tensors(crystal_array_list, niggli, primitive, graph_method):
         [niggli] * len(crystal_array_list),
         [primitive] * len(crystal_array_list),
         [graph_method] * len(crystal_array_list),
-        num_cpus=30,
+        num_cpus=30, ##Changed this from 30
     )
     ordered_results = list(
         sorted(unordered_results, key=lambda x: x['batch_idx']))

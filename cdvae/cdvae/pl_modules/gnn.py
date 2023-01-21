@@ -38,6 +38,26 @@ class ResidualLayerFull(ResidualLayer):
         pass
     def forward(self):
         pass
+class EmbeddingBlockBravais(EmbeddingBlock): ##New class ###
+    def __init__(self, num_radial: int, hidden_channels: int, act: Callable):
+        super().__init__(
+            num_radial = num_radial,
+            hidden_channels = hidden_channels,
+            act = act
+        )
+        self.emb_bravais = Embedding(14, hidden_channels)
+        self.lin = Linear(4 * hidden_channels, hidden_channels)
+        self.hidden_channels = hidden_channels
+
+    def forward(self, x: Tensor, bravais: Tensor, rbf: Tensor, i: Tensor, j: Tensor, color: Any) -> Tensor:
+        x = self.emb(x)
+        y = self.emb_bravais(bravais)
+             
+        rbf = self.act(self.lin_rbf(rbf))
+
+        x_edge = torch.cat([x[i], x[j], y, rbf], dim = -1)
+        outputs = self.act(self.lin(x_edge))
+        return outputs
 
 class EmbeddingBlockColor(EmbeddingBlock):
     def __init__(self, num_radial: int, hidden_channels: int, act: Callable, colors: List[int]):
@@ -366,7 +386,8 @@ class DimeNetPlusPlus(torch.nn.Module):
             num_spherical, num_radial, cutoff, envelope_exponent
         )
 
-        self.emb = EmbeddingBlock(num_radial, hidden_channels, act)
+        # self.emb = EmbeddingBlock(num_radial, hidden_channels, act)
+        self.emb = EmbeddingBlockBravais(num_radial, hidden_channels, act)
 
         self.output_blocks = torch.nn.ModuleList(
             [
@@ -534,7 +555,8 @@ class DimeNetPlusPlusWrap(DimeNetPlusPlus):
         sbf = self.sbf(dist, angle, idx_kj)
 
         # Embedding block.
-        x = self.emb(data.atom_types.long(), rbf, i, j)
+        # x = self.emb(data.atom_types.long(), rbf, i, j)
+        x = self.emb(data.atom_types.long(), data.bravais.long(), rbf, i, j)
         P = self.output_blocks[0](x, rbf, i, num_nodes=pos.size(0))
 
         # Interaction blocks.
