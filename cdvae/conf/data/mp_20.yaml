@@ -1,4 +1,4 @@
-root_path: ${oc.env:PROJECT_ROOT}/data/mp_20
+root_path: ${oc.env:PROJECT_ROOT}/data/mp_bravais
 prop: formation_energy_per_atom
 num_targets: 1
 # prop: scaled_lattice
@@ -22,6 +22,12 @@ teacher_forcing_max_epoch: 500
 datamodule:
   _target_: cdvae.pl_data.datamodule.CrystDataModule
 
+  load_data: 
+    preprocessed: False
+    preprocessed_train: ${data.root_path}/train.pt
+    preprocessed_val: ${data.root_path}/val.pt
+    preprocessed_test: ${data.root_path}/test.pt
+
   datasets:
     train:
       _target_: cdvae.pl_data.dataset.CrystDataset
@@ -33,6 +39,9 @@ datamodule:
       graph_method: ${data.graph_method}
       lattice_scale_method: ${data.lattice_scale_method}
       preprocess_workers: ${data.preprocess_workers}
+      color_matrix_path: ${oc.env:PROJECT_ROOT}/cdvae/common/colored_matrices.pkl
+      lattice_type: ptriclinic # pcubic, ptriclinic
+      onet_path: ${oc.env:PROJECT_ROOT}/data/perov_5/train_rep.pkl
 
     val:
       - _target_: cdvae.pl_data.dataset.CrystDataset
@@ -44,6 +53,9 @@ datamodule:
         graph_method: ${data.graph_method}
         lattice_scale_method: ${data.lattice_scale_method}
         preprocess_workers: ${data.preprocess_workers}
+        color_matrix_path: ${oc.env:PROJECT_ROOT}/cdvae/common/colored_matrices.pkl
+        lattice_type: ptriclinic # pcubic, ptriclinic
+        onet_path: ${oc.env:PROJECT_ROOT}/data/perov_5/train_rep.pkl
 
     test:
       - _target_: cdvae.pl_data.dataset.CrystDataset
@@ -55,6 +67,9 @@ datamodule:
         graph_method: ${data.graph_method}
         lattice_scale_method: ${data.lattice_scale_method}
         preprocess_workers: ${data.preprocess_workers}
+        color_matrix_path: ${oc.env:PROJECT_ROOT}/cdvae/common/colored_matrices.pkl
+        lattice_type: ptriclinic # pcubic, ptriclinic
+        onet_path: ${oc.env:PROJECT_ROOT}/data/perov_5/train_rep.pkl
 
   num_workers:
     train: 0

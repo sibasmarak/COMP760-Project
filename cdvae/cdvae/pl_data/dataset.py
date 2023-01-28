@@ -15,8 +15,9 @@ from cdvae.common.data_utils import (
 
 
 class CrystDataset(Dataset):
-    def __init__(self, name: ValueNode, path: ValueNode, onet_path: ValueNode, 
-                 color_matrix_path: ValueNode, prop: ValueNode, niggli: ValueNode, 
+    def __init__(self, name: ValueNode, path: ValueNode, #onet_path: ValueNode, 
+                 #color_matrix_path: ValueNode, 
+                 prop: ValueNode, niggli: ValueNode, 
                  primitive: ValueNode, graph_method: ValueNode, preprocess_workers: ValueNode,
                  lattice_scale_method: ValueNode, lattice_type: ValueNode,
                  **kwargs):
@@ -29,13 +30,13 @@ class CrystDataset(Dataset):
         self.primitive = primitive
         self.graph_method = graph_method
         self.lattice_scale_method = lattice_scale_method
-        self.onet_data = pickle.load(open(onet_path, 'rb'))
-        self.color_matrix = pickle.load(open(color_matrix_path, 'rb'))
+        # self.onet_data = pickle.load(open(onet_path, 'rb'))
+        # self.color_matrix = pickle.load(open(color_matrix_path, 'rb'))
         self.lattice_type = lattice_type
 
         # transfer to cpu to avoid memory leak
-        for k, v in self.onet_data.items():
-            self.onet_data[k] = v.cpu()
+        # for k, v in self.onet_data.items():
+            # self.onet_data[k] = v.cpu()
 
 
         self.cached_data = preprocess(
@@ -44,8 +45,8 @@ class CrystDataset(Dataset):
             niggli=self.niggli,
             primitive=self.primitive,
             graph_method=self.graph_method,
-            prop_list=[prop],
-            onet_data=self.onet_data)
+            prop_list=[prop],)
+            # onet_data=self.onet_data)
 
         add_scaled_lattice_prop(self.cached_data, lattice_scale_method)
         self.lattice_scaler = None
@@ -76,9 +77,10 @@ class CrystDataset(Dataset):
             num_atoms=num_atoms,
             num_bonds=edge_indices.shape[0],
             num_nodes=num_atoms,  # special attribute used for batching in pytorch geometric
-            bravais=one_hot(torch.tensor(data_dict['bravais']), num_classes = 14), ## Added bravais ##$
+            # bravais=one_hot(torch.tensor(data_dict['bravais']), num_classes = 14), ## Added bravais ##$
+            bravais=torch.tensor([data_dict['bravais']] * num_atoms), ## Added bravais ##$
             # onet_rep=torch.Tensor(data_dict['onet_rep']).view(1, -1),
-            color_matrix= torch.Tensor(self.color_matrix[self.lattice_type]), 
+            # color_matrix= torch.Tensor(self.color_matrix[self.lattice_type]), 
             y=prop.view(1, -1),
         )
         return data

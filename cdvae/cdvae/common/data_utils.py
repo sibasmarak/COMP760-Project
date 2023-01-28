@@ -650,10 +650,10 @@ def get_scaler_from_data_list(data_list, key):
 
 
 def preprocess(input_file, num_workers, niggli, primitive, graph_method,
-               prop_list, onet_data):
+               prop_list):#, onet_data):
     df = pd.read_csv(input_file)
 
-    def process_one(row, niggli, primitive, graph_method, prop_list, onet_data):
+    def process_one(row, niggli, primitive, graph_method, prop_list):#, onet_data):
         crystal_str = row['cif']
         bravais = row['bravais'] ##Added this##
         crystal = build_crystal(
@@ -663,7 +663,7 @@ def preprocess(input_file, num_workers, niggli, primitive, graph_method,
         result_dict = {
             'mp_id': row['material_id'],
             'cif': crystal_str,
-            'onet_rep': onet_data,
+            # 'onet_rep': onet_data,
             'graph_arrays': graph_arrays,
             'bravais': BRAVAIS_IND[bravais],
         }
@@ -677,7 +677,7 @@ def preprocess(input_file, num_workers, niggli, primitive, graph_method,
         [primitive] * len(df),
         [graph_method] * len(df),
         [prop_list] * len(df),
-        [onet_data[row['material_id']] for idx, row in df.iterrows()],
+        # [onet_data[row['material_id']] for idx, row in df.iterrows()],
         num_cpus=num_workers)
 
     mpid_to_results = {result['mp_id']: result for result in unordered_results}

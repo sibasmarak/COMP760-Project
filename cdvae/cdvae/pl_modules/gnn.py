@@ -46,16 +46,16 @@ class EmbeddingBlockBravais(EmbeddingBlock): ##New class ###
             act = act
         )
         self.emb_bravais = Embedding(14, hidden_channels)
-        self.lin = Linear(4 * hidden_channels, hidden_channels)
+        self.lin = Linear(5 * hidden_channels, hidden_channels)
         self.hidden_channels = hidden_channels
 
-    def forward(self, x: Tensor, bravais: Tensor, rbf: Tensor, i: Tensor, j: Tensor, color: Any) -> Tensor:
+    def forward(self, x: Tensor, bravais: Tensor, rbf: Tensor, i: Tensor, j: Tensor) -> Tensor:
         x = self.emb(x)
         y = self.emb_bravais(bravais)
              
         rbf = self.act(self.lin_rbf(rbf))
 
-        x_edge = torch.cat([x[i], x[j], y, rbf], dim = -1)
+        x_edge = torch.cat([x[i], y[i], x[j], y[j], rbf], dim = -1)
         outputs = self.act(self.lin(x_edge))
         return outputs
 

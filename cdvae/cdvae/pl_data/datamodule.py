@@ -64,8 +64,8 @@ class CrystDataModule(pl.LightningDataModule):
         if scaler_path is None:
             if self.load_data.preprocessed:
                 train_dataset = torch.load(self.load_data.preprocessed_train)
-                train_dataset.color_matrix = pickle.load(open(self.datasets.train.color_matrix_path, 'rb'))
-                train_dataset.onet_data = pickle.load(open(self.datasets.train.onet_path, 'rb'))
+                # train_dataset.color_matrix = pickle.load(open(self.datasets.train.color_matrix_path, 'rb'))
+                # train_dataset.onet_data = pickle.load(open(self.datasets.train.onet_path, 'rb'))
             else:
                 train_dataset = hydra.utils.instantiate(self.datasets.train)
             
@@ -87,15 +87,15 @@ class CrystDataModule(pl.LightningDataModule):
         if stage is None or stage == "fit":
             if self.load_data.preprocessed:
                 self.train_dataset = torch.load(self.load_data.preprocessed_train)
-                self.train_dataset.color_matrix = pickle.load(open(self.datasets.train.color_matrix_path, 'rb'))
-                self.train_dataset.onet_data = pickle.load(open(self.datasets.train.onet_path, 'rb'))
-                self.train_dataset.lattice_type = self.datasets.train.lattice_type
+                # self.train_dataset.color_matrix = pickle.load(open(self.datasets.train.color_matrix_path, 'rb'))
+                # self.train_dataset.onet_data = pickle.load(open(self.datasets.train.onet_path, 'rb'))
+                # self.train_dataset.lattice_type = self.datasets.train.lattice_type
             
-                self.val_datasets = [torch.load(self.load_data.preprocessed_val)]
-                for i in range(len(self.val_datasets)):
-                    self.val_datasets[i].color_matrix = pickle.load(open(self.datasets.val[i].color_matrix_path, 'rb'))
-                    self.val_datasets[i].onet_data = pickle.load(open(self.datasets.val[i].onet_path, 'rb'))
-                    self.val_datasets[i].lattice_type = self.datasets.val[i].lattice_type
+                self.val_datasets = torch.load(self.load_data.preprocessed_val) #REMOVED [] BECAUSE IT IS ALREADY A LIST
+                # for i in range(len(self.val_datasets)):
+                    # self.val_datasets[i].color_matrix = pickle.load(open(self.datasets.val[i].color_matrix_path, 'rb'))
+                    # self.val_datasets[i].onet_data = pickle.load(open(self.datasets.val[i].onet_path, 'rb'))
+                    # self.val_datasets[i].lattice_type = self.datasets.val[i].lattice_type
             else:
                 self.train_dataset = hydra.utils.instantiate(self.datasets.train)
                 self.val_datasets = [
@@ -105,20 +105,23 @@ class CrystDataModule(pl.LightningDataModule):
 
             self.train_dataset.lattice_scaler = self.lattice_scaler
             self.train_dataset.scaler = self.scaler
+            print('Saving Train dataset')
             torch.save(self.train_dataset, '/home/mila/p/prashant.govindarajan/scratch/COMP760-Project/cdvae/data/mp_bravais/train.pt')
             for val_dataset in self.val_datasets:
                 val_dataset.lattice_scaler = self.lattice_scaler
                 val_dataset.scaler = self.scaler
+            
+            print('Saving Val dataset')
             torch.save(self.val_datasets, '/home/mila/p/prashant.govindarajan/scratch/COMP760-Project/cdvae/data/mp_bravais/val.pt')
             
             
         if stage is None or stage == "test":
             if self.load_data.preprocessed:
-                self.test_datasets = [torch.load(self.load_data.preprocessed_test)]
-                for i in range(len(self.test_datasets)):
-                    self.test_datasets[i].color_matrix = pickle.load(open(self.datasets.test[i].color_matrix_path, 'rb'))
-                    self.test_datasets[i].onet_data = pickle.load(open(self.datasets.test[i].onet_path, 'rb'))
-                    self.test_datasets[i].lattice_type = self.datasets.test[i].lattice_type
+                self.test_datasets = torch.load(self.load_data.preprocessed_test)
+                # for i in range(len(self.test_datasets)):
+                #     self.test_datasets[i].color_matrix = pickle.load(open(self.datasets.test[i].color_matrix_path, 'rb'))
+                #     self.test_datasets[i].onet_data = pickle.load(open(self.datasets.test[i].onet_path, 'rb'))
+                #     self.test_datasets[i].lattice_type = self.datasets.test[i].lattice_type
             else:
                 self.test_datasets = [
                     hydra.utils.instantiate(dataset_cfg)
@@ -129,6 +132,7 @@ class CrystDataModule(pl.LightningDataModule):
                 test_dataset.lattice_scaler = self.lattice_scaler
                 test_dataset.scaler = self.scaler
         ## saving test data ###$
+        print('Saving Test dataset')
         torch.save(self.test_datasets, '/home/mila/p/prashant.govindarajan/scratch/COMP760-Project/cdvae/data/mp_bravais/test.pt')
         
             
