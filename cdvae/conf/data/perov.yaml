@@ -13,6 +13,7 @@ readout: mean
 max_atoms: 40
 otf_graph: false
 eval_model_name: perovskite
+bravais_type: pcubic # pcubic, ptriclinic
 
 
 train_max_epochs: 3000
@@ -22,49 +23,55 @@ teacher_forcing_max_epoch: 1500
 
 datamodule:
   _target_: cdvae.pl_data.datamodule.CrystDataModule
+  
+  load_data: 
+    preprocessed: False
+    preprocessed_train: ${data.root_path}/train_super.pt
+    preprocessed_val: ${data.root_path}/val_super.pt
+    preprocessed_test: ${data.root_path}/test_super.pt
 
   datasets:
     train:
       _target_: cdvae.pl_data.dataset.CrystDataset
       name: Formation energy train
       path: ${data.root_path}/train.csv
-      onet_path: ${data.root_onet_path}/train_rep.pkl
-      color_matrix_path: ${oc.env:PROJECT_ROOT}/cdvae/common/colored_matrices.pkl
-      lattice_type: pcubic # pcubic, ptriclinic
       prop: ${data.prop}
       niggli: ${data.niggli}
       primitive: ${data.primitive}
       graph_method: ${data.graph_method}
       lattice_scale_method: ${data.lattice_scale_method}
       preprocess_workers: ${data.preprocess_workers}
+      color_matrix_path: ${oc.env:PROJECT_ROOT}/cdvae/common/colored_matrices.pkl
+      lattice_type: ${data.bravais_type} # pcubic, ptriclinic
+      onet_path: ${oc.env:PROJECT_ROOT}/data/perov_5/train_rep.pkl
 
     val:
       - _target_: cdvae.pl_data.dataset.CrystDataset
         name: Formation energy val
         path: ${data.root_path}/val.csv
-        onet_path: ${data.root_onet_path}/val_rep.pkl
-        color_matrix_path: ${oc.env:PROJECT_ROOT}/cdvae/common/colored_matrices.pkl
-        lattice_type: pcubic # pcubic, ptriclinic
         prop: ${data.prop}
         niggli: ${data.niggli}
         primitive: ${data.primitive}
         graph_method: ${data.graph_method}
         lattice_scale_method: ${data.lattice_scale_method}
         preprocess_workers: ${data.preprocess_workers}
+        color_matrix_path: ${oc.env:PROJECT_ROOT}/cdvae/common/colored_matrices.pkl
+        lattice_type: ${data.bravais_type} # pcubic, ptriclinic
+        onet_path: ${oc.env:PROJECT_ROOT}/data/perov_5/val_rep.pkl
 
     test:
       - _target_: cdvae.pl_data.dataset.CrystDataset
         name: Formation energy test
         path: ${data.root_path}/test.csv
-        onet_path: ${data.root_onet_path}/test_rep.pkl
-        color_matrix_path: ${oc.env:PROJECT_ROOT}/cdvae/common/colored_matrices.pkl
-        lattice_type: pcubic # pcubic, ptriclinic
         prop: ${data.prop}
         niggli: ${data.niggli}
         primitive: ${data.primitive}
         graph_method: ${data.graph_method}
         lattice_scale_method: ${data.lattice_scale_method}
         preprocess_workers: ${data.preprocess_workers}
+        color_matrix_path: ${oc.env:PROJECT_ROOT}/cdvae/common/colored_matrices.pkl
+        lattice_type: ${data.bravais_type} # pcubic, ptriclinic
+        onet_path: ${oc.env:PROJECT_ROOT}/data/perov_5/test_rep.pkl
 
   num_workers:
     train: 0
